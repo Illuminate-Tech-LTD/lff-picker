@@ -677,7 +677,8 @@
     <div class="poll-card">
       <div class="poll-who">
         <label class="eyebrow" for="pollName">Who's picking?</label>
-        <input id="pollName" type="text" placeholder="Your name" list="pollNames" autocomplete="off" />
+        <input id="pollName" type="text" placeholder="Your name" list="pollPickers" autocomplete="off" />
+        <datalist id="pollPickers"><option value="Some other guy"></option><option value="Oli"></option></datalist>
         <datalist id="pollNames"><option value="Em"></option><option value="Oli"></option></datalist>
         <button id="pollSave" class="poll-save">Save</button>
         <span class="poll-status" id="pollStatus"></span>
@@ -1292,6 +1293,15 @@
     var db = null;
     var hydrated = false;
 
+    // Em's shortlist is the page itself, so this field only accepts Oli's.
+    // Anything else — "Some other guy" included — is a null action.
+    var POLL_PICKER = "oli";
+    function isPicker(){ return slugName(nameInput.value || "") === POLL_PICKER; }
+
+    function refreshSaveBtn(){
+      saveBtn.disabled = !db || !isPicker();
+    }
+
     try{
       var savedName = localStorage.getItem("lff26-poll-name");
       if(savedName) nameInput.value = savedName;
@@ -1306,6 +1316,16 @@
       checkboxes().forEach(function(cb){ cb.checked = picks.indexOf(cb.value) !== -1; });
     }
     nameInput.addEventListener("change", loadNameIntoChecks);
+    nameInput.addEventListener("input", function(){
+      refreshSaveBtn();
+      var typed = (nameInput.value || "").trim();
+      if(!typed || isPicker()){
+        statusEl.textContent = ""; statusEl.className = "poll-status";
+      } else {
+        statusEl.textContent = "Only Oli's shortlist is needed here — Em's is already the list on the right.";
+        statusEl.className = "poll-status";
+      }
+    });
 
     function renderCompare(){
       var docs = allShortlists();          // always at least Em
@@ -1350,6 +1370,7 @@
         saveBtn.disabled = true;
         return;
       }
+      refreshSaveBtn();
       db.collection("shortlists").onSnapshot(function(snap){
         var next = {};
         snap.docs.forEach(function(d){
@@ -1368,6 +1389,11 @@
     saveBtn.addEventListener("click", async function(){
       var name = (nameInput.value || "").trim();
       if(!name){ statusEl.textContent = "Add your name first."; statusEl.className = "poll-status"; return; }
+      if(!isPicker()){
+        statusEl.textContent = "Only Oli's shortlist is needed here — Em's is already the list on the right.";
+        statusEl.className = "poll-status";
+        return;
+      }
       if(!db){ statusEl.textContent = "Live sync unavailable here."; return; }
       var picks = checkboxes().filter(function(cb){ return cb.checked; }).map(function(cb){ return cb.value; });
       var slug = slugName(name);
@@ -1387,6 +1413,7 @@
 
     watchShortlists(renderCompare);
     loadNameIntoChecks();
+    refreshSaveBtn();
   })();
 
   // ---- View switching: main <-> lock-in screenings ----
