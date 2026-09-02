@@ -114,7 +114,7 @@
     line-height:1.5;
     padding:32px 20px 80px;
   }
-  .page{ max-width:920px; margin:0 auto; }
+  .page{ max-width:1120px; margin:0 auto; }
 
   h1,h2,h3{ font-family:"Plus Jakarta Sans", ui-sans-serif, sans-serif; font-weight:700; text-wrap:balance; margin:0; letter-spacing:-0.01em; }
 
@@ -269,19 +269,63 @@
   /* The other showings of a film that's already been locked in. */
   .evt.superseded{ opacity:0.32; }
 
-  /* ---------- Agenda / film cards ---------- */
-  section.agenda h2{ font-size:20px; font-weight:800; margin-bottom:4px; }
-  .agenda-sub{ color:var(--ink-faint); font-size:12.5px; margin-bottom:16px; }
+  /* ---------- Shortlist builder: picks left, agenda panel right ---------- */
+  .shortlist-layout{
+    display:grid; grid-template-columns:minmax(0,1fr) 350px; gap:24px;
+  }
+  /* .agenda-col stretches to the row height so the panel inside can stick. */
+  .agenda-panel{
+    position:sticky; top:16px;
+    display:flex; flex-direction:column;
+    max-height:calc(100vh - 32px);
+    background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:15px 14px 0;
+  }
+  .agenda-panel-head{
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    padding-bottom:12px; border-bottom:1px solid var(--line); margin-bottom:12px; flex:none;
+  }
+  .agenda-panel h2{ font-size:16px; font-weight:800; margin-bottom:2px; }
+  .agenda-sub{ color:var(--ink-faint); font-size:11.5px; }
+  .agenda-all{
+    font-family:"Plus Jakarta Sans", sans-serif; font-size:11px; font-weight:700;
+    background:none; border:1px solid var(--line-strong); color:var(--ink-soft);
+    border-radius:100px; padding:4px 10px; cursor:pointer; flex:none; white-space:nowrap;
+  }
+  .agenda-all:hover{ background:var(--surface); color:var(--ink); }
 
-  .film-list{ display:flex; flex-direction:column; gap:12px; }
+  /* The list is the only thing that scrolls, so the head stays put. */
+  .film-list{
+    display:flex; flex-direction:column; gap:10px;
+    overflow-y:auto; padding-bottom:15px;
+  }
+
+  @media (max-width:1000px){
+    .shortlist-layout{ grid-template-columns:1fr; gap:18px; }
+    /* Stacked in the page flow: no inner scroll, and cards start collapsed
+       (set in JS) so the panel doesn't add thousands of pixels of scroll. */
+    .agenda-panel{ position:static; max-height:none; padding-bottom:15px; }
+    .film-list{ overflow-y:visible; max-height:none; padding-bottom:0; }
+    .agenda-all{ font-size:12px; padding:9px 15px; }
+  }
   .film-card{
     background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md);
-    padding:18px 20px; box-shadow:var(--shadow);
+    padding:13px 15px; box-shadow:var(--shadow);
   }
   .film-head{
-    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 16px;
-    margin-bottom:6px;
+    display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:4px 10px;
   }
+  .film-card h3{ font-size:15px; }
+  .film-head .film-head-right{ display:flex; align-items:center; gap:8px; flex:none; }
+  .film-toggle{
+    background:none; border:none; cursor:pointer; color:var(--ink-faint);
+    font-size:11px; line-height:1; padding:3px 4px; border-radius:5px; flex:none;
+    transition:transform 0.15s ease;
+  }
+  .film-toggle:hover{ background:var(--surface-2); color:var(--ink); }
+  .film-toggle[aria-expanded="false"]{ transform:rotate(-90deg); }
+  .film-body{ margin-top:8px; }
+  .film-card.collapsed .film-body{ display:none; }
   .film-head .name-row{ display:flex; align-items:center; gap:9px; }
   .film-dot{ width:9px; height:9px; border-radius:50%; background:var(--film-color); flex:none; }
   .film-card h3{ font-size:17px; font-weight:700; }
@@ -506,15 +550,16 @@
     .lockin-cal-sticky{ position:static; }
     .lockin-panel-head{ position:static; }
     #viewLockin .cal-cell{ min-height:64px; }
-    #viewLockin .evt{ font-size:9.5px; padding:2px 6px; }
   }
 
   @media (max-width:720px){
     /* Seven columns on a phone leaves no room for titles — show the time only
-       and let the legend below map colours back to films. */
-    #viewLockin .evt{ justify-content:center; padding:2px 3px; }
-    #viewLockin .evt .n{ display:none; }
-    #viewLockin .evt .t{ opacity:1; }
+       and let the legend map colours back to films. Applies to the main
+       calendar too: at 375px its cells are 47px, so a name is unreadable. */
+    .evt{ justify-content:center; padding:2px 3px; }
+    .evt .n{ display:none; }
+    .evt .t{ opacity:1; }
+    .cal-cell{ min-height:64px; }
     /* One scrolling row, so the pinned calendar doesn't need inner scrolling. */
     #viewLockin .legend-compact{
       display:flex; flex-wrap:nowrap; overflow-x:auto;
@@ -533,13 +578,21 @@
 
   @media (max-width:640px){
     .cal-grid{ grid-template-columns:repeat(7,minmax(0,1fr)); }
-    .cal-cell{ min-height:80px; padding:5px 3px 6px; }
+    .cal-cell{ min-height:64px; padding:5px 3px 6px; }
     .evt{ font-size:9.5px; padding:2px 5px; }
     .head-row{ flex-direction:column; align-items:flex-start; }
     .section-head{ flex-wrap:wrap; gap:2px 10px; }
     header.top .fest-dates{ text-align:left; }
     .clock-digits .val{ font-size:23px; padding:6px 2px; }
     .clock-digits .seg{ min-width:42px; }
+  }
+
+  /* Phone touch targets. Must come last: the base rules for these live
+     further down the sheet than the layout media query above. */
+  @media (max-width:1000px){
+    .film-toggle{ font-size:13px; padding:16px; margin:-13px -9px -13px 0; }
+    .poll-detail summary{ padding:7px 0; }
+    .film-meta{ white-space:normal; }
   }
 </style>
 </head>
@@ -597,17 +650,13 @@
     <div class="cal-grid" id="calGrid"></div>
   </section>
 
-  <section class="agenda">
-    <h2>Full agenda</h2>
-    <p class="agenda-sub">Tap a title to open its BFI booking page.</p>
-    <div class="film-list" id="filmList"></div>
-  </section>
-
   <section class="poll">
     <div class="section-head">
       <h2>Create your shortlist</h2>
       <span class="hint">pick a name, tick your galas, see the overlap live</span>
     </div>
+    <div class="shortlist-layout">
+    <div class="shortlist-main">
     <div class="poll-card">
       <div class="poll-who">
         <label class="eyebrow" for="pollName">Who's picking?</label>
@@ -630,6 +679,21 @@
         <span class="hint" id="lockinCtaHint">Ready to commit? Pick one showing per film together.</span>
         <button id="lockinOpen" class="lockin-btn" disabled>Lock in screenings &rarr;</button>
       </div>
+    </div>
+    </div>
+
+    <div class="agenda-col">
+      <aside class="agenda-panel">
+        <div class="agenda-panel-head">
+          <div>
+            <h2>Em's picks</h2>
+            <p class="agenda-sub">Tap a title to open its BFI booking page.</p>
+          </div>
+          <button type="button" class="agenda-all" id="agendaAll">Collapse all</button>
+        </div>
+        <div class="film-list" id="filmList"></div>
+      </aside>
+    </div>
     </div>
   </section>
 
@@ -974,20 +1038,74 @@
       return '<div class="screening"><div class="d">'+s.day+'</div><div class="tm">'+s.time+'</div><div class="v">'+s.venue+'</div></div>';
     }).join("");
 
+    // The title stays a plain link to BFI; the chevron beside it does the
+    // collapsing, so tapping a title still opens the booking page.
     card.innerHTML =
       '<div class="film-head">'+
         '<div class="name-row">'+
           '<span class="film-dot"></span>'+
           '<h3><a href="'+f.url+'" target="_blank" rel="noopener">'+f.title+'</a>'+(f.badge ? '<span class="badge gala">'+f.badge+'</span>' : '')+'</h3>'+
         '</div>'+
-        '<div class="film-meta">'+f.meta+'</div>'+
+        '<div class="film-head-right">'+
+          '<div class="film-meta">'+f.meta+'</div>'+
+          '<button type="button" class="film-toggle" aria-expanded="true" '+
+            'aria-label="Collapse '+f.title+'">&#9662;</button>'+
+        '</div>'+
       '</div>'+
-      '<div class="film-credits"><b>Dir.</b> '+f.director+' &nbsp;&middot;&nbsp; <b>With</b> '+f.cast+'</div>'+
-      '<div class="film-synopsis">'+f.synopsis+'</div>'+
-      '<div class="screenings">'+screeningsHtml+'</div>';
+      '<div class="film-body">'+
+        '<div class="film-credits"><b>Dir.</b> '+f.director+' &nbsp;&middot;&nbsp; <b>With</b> '+f.cast+'</div>'+
+        '<div class="film-synopsis">'+f.synopsis+'</div>'+
+        '<div class="screenings">'+screeningsHtml+'</div>'+
+      '</div>';
 
     list.appendChild(card);
   });
+
+  // ---- Agenda: collapse / expand ----
+  (function(){
+    var allBtn = document.getElementById("agendaAll");
+
+    function setCard(card, open){
+      var btn = card.querySelector(".film-toggle");
+      var title = card.querySelector("h3 a");
+      card.classList.toggle("collapsed", !open);
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.setAttribute("aria-label", (open ? "Collapse " : "Expand ") + (title ? title.textContent : "film"));
+    }
+
+    function cards(){ return Array.prototype.slice.call(list.querySelectorAll(".film-card")); }
+
+    // The button offers whichever action affects more cards.
+    function syncAllBtn(){
+      var open = cards().filter(function(c){ return !c.classList.contains("collapsed"); }).length;
+      var collapseIsUseful = open > cards().length / 2;
+      allBtn.textContent = collapseIsUseful ? "Collapse all" : "Expand all";
+      allBtn.dataset.action = collapseIsUseful ? "collapse" : "expand";
+    }
+
+    list.addEventListener("click", function(e){
+      var btn = e.target.closest(".film-toggle");
+      if(!btn) return;
+      var card = btn.closest(".film-card");
+      setCard(card, card.classList.contains("collapsed"));
+      syncAllBtn();
+    });
+
+    allBtn.addEventListener("click", function(){
+      var open = allBtn.dataset.action === "expand";
+      cards().forEach(function(c){ setCard(c, open); });
+      syncAllBtn();
+      list.scrollTop = 0;
+    });
+
+    // On a phone the panel sits in the page flow rather than scrolling inside
+    // itself, so nine open cards is a punishing scroll. Start collapsed there.
+    if(window.matchMedia("(max-width:1000px)").matches){
+      cards().forEach(function(c){ setCard(c, false); });
+    }
+
+    syncAllBtn();
+  })();
 
   // ---- Poll: full Galas programme (23 films) ----
   var pollFilms = [
