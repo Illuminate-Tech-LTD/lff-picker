@@ -337,11 +337,18 @@
   .film-credits b{ color:var(--ink); font-weight:600; }
   .film-synopsis{ font-size:13px; color:var(--ink-soft); max-width:66ch; margin-bottom:14px; }
 
-  .screenings{ display:flex; flex-wrap:wrap; gap:8px; }
+  /* Equal-sized screening chips: auto-fit columns share the width evenly and
+     grid-auto-rows:1fr levels every row to the tallest, so a long venue name
+     doesn't leave its neighbours short. */
+  .screenings{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr));
+    grid-auto-rows:1fr; gap:8px;
+  }
   .screening{
     display:flex; flex-direction:column; gap:1px;
     background:var(--surface-2); border:1px solid var(--line);
-    border-radius:var(--radius-sm); padding:7px 12px; min-width:150px;
+    border-radius:var(--radius-sm); padding:7px 10px;
+    min-width:0; overflow-wrap:break-word;
   }
   .screening .d{ font-size:12.5px; font-weight:700; }
   .screening .v{ font-size:11.5px; color:var(--ink-soft); }
