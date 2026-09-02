@@ -1,7 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LFF 2026 Shortlist</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.14.1/firebase-app-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.14.1/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --paper:#F5F4FF;
@@ -197,7 +204,7 @@
   /* ---------- Calendar ---------- */
   section.calendar{ margin-bottom:48px; }
   .section-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; }
-  .section-head h2{ font-size:22px; font-weight:600; }
+  .section-head h2{ font-size:20px; font-weight:800; }
   .section-head .hint{ font-size:12.5px; color:var(--ink-faint); }
 
   .cal-grid{
@@ -434,6 +441,9 @@
     .clock-digits .seg{ min-width:44px; }
   }
 </style>
+</head>
+<body>
+
 
 <div class="page">
 
@@ -476,14 +486,6 @@
 
   <div class="legend" id="legend"></div>
 
-  <section class="calendar">
-    <div class="section-head">
-      <h2>Screenings</h2>
-      <span class="hint">times shown are local &middot; London venues</span>
-    </div>
-    <div class="cal-grid" id="calGrid"></div>
-  </section>
-
   <section class="agenda">
     <h2>Full agenda</h2>
     <p class="agenda-sub">Tap a title to open its BFI booking page.</p>
@@ -492,7 +494,7 @@
 
   <section class="poll">
     <div class="section-head">
-      <h2>Cross-compare shortlists</h2>
+      <h2>Create your shortlist</h2>
       <span class="hint">pick a name, tick your galas, see the overlap live</span>
     </div>
     <div class="poll-card">
@@ -533,6 +535,14 @@
     <p>Pick the one showing you'll actually go to for each film &mdash; saves live so you both see the same plan.</p>
   </div>
 
+  <section class="calendar">
+    <div class="section-head">
+      <h2>Screenings</h2>
+      <span class="hint">times shown are local &middot; London venues</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </section>
+
   <div class="lockin-who">
     <label class="eyebrow" for="lockinName">Who's locking in?</label>
     <input id="lockinName" type="text" placeholder="Your name" list="pollNames" autocomplete="off" />
@@ -554,6 +564,59 @@
 </div>
 
 
+<script>
+/* ---------------------------------------------------------------------
+   SHARED LIVE SYNC (optional) — for the "Screenings match" poll and the
+   "Lock in screenings" flow to sync between you and a friend when this
+   page is hosted on its own (e.g. GitHub Pages), plug in a free Firebase
+   project:
+
+   1. Go to https://console.firebase.google.com -> Add project (free).
+   2. In the project, add a Web App and copy the "firebaseConfig" object
+      it gives you.
+   3. Paste those values into FIREBASE_CONFIG below.
+   4. In the Firebase console go to Build -> Firestore Database -> Create
+      database -> Start in TEST MODE (fine for a small friends-only tool;
+      test mode rules expire after 30 days, so re-open access if needed).
+   That's it — no server, no billing required on the free Spark plan.
+
+   If FIREBASE_CONFIG is left as-is, the poll/lock-in sections still work
+   for entering your own picks, they just won't sync live with anyone
+   else until this is filled in (or the page is opened inside Claude).
+--------------------------------------------------------------------- */
+var FIREBASE_CONFIG = {
+  apiKey: "PASTE_YOUR_API_KEY",
+  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+  projectId: "PASTE_YOUR_PROJECT_ID",
+  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
+  messagingSenderId: "PASTE_YOUR_SENDER_ID",
+  appId: "PASTE_YOUR_APP_ID"
+};
+
+var firebaseReady = false;
+try{
+  if (FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf("PASTE_") !== 0 &&
+      window.firebase && firebase.initializeApp) {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseReady = true;
+  }
+}catch(e){ firebaseReady = false; }
+
+async function getSharedDb(){
+  // Prefer Claude's built-in sync when this page happens to be open there.
+  try{
+    if (window.claude && window.claude.use) {
+      var claudeDb = await window.claude.use("db");
+      if (claudeDb) return claudeDb;
+    }
+  }catch(e){}
+  // Otherwise fall back to Firebase Firestore, if configured above.
+  if (firebaseReady) {
+    try{ return firebase.firestore(); }catch(e){ return null; }
+  }
+  return null;
+}
+</script>
 <script>
 (function(){
   var films = [
@@ -931,10 +994,10 @@
 
     async function initDb(){
       try{
-        db = (window.claude && window.claude.use) ? await window.claude.use("db") : null;
+        db = await getSharedDb();
       }catch(e){ db = null; }
       if(!db){
-        dbNoteEl.textContent = "Live syncing needs this page open in Claude — open it there so Oli's picks sync here.";
+        dbNoteEl.textContent = "Live syncing isn't connected yet — add a free Firebase project (see the setup note near the top of this file) so a buddy's picks sync here.";
         saveBtn.disabled = true;
         return;
       }
@@ -1088,10 +1151,10 @@
 
     async function initDb(){
       try{
-        db = (window.claude && window.claude.use) ? await window.claude.use("db") : null;
+        db = await getSharedDb();
       }catch(e){ db = null; }
       if(!db){
-        statusEl.textContent = "Live syncing needs this page open in Claude.";
+        statusEl.textContent = "Live syncing isn't connected yet — add a free Firebase project (see the setup note near the top of this file) to share this live.";
         saveBtn.disabled = true;
         return;
       }
@@ -1166,3 +1229,6 @@
   })();
 })();
 </script>
+
+</body>
+</html>
