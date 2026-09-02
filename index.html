@@ -33,6 +33,16 @@
     --radius-sm:8px;
     --shadow: 0 1px 2px rgba(26,26,62,0.04), 0 6px 20px -10px rgba(26,26,62,0.14);
 
+    /* The countdown cards stay dark in both schemes, so they can't use --ink. */
+    --clock-bg:#1A1A3E;
+    --clock-key:#B9C2EE;
+    --clock-when:#DADFF7;
+    --clock-colon:#7C8AC4;
+    --clock-alt-bg:#123833;
+    --clock-alt-key:#8AD9C4;
+    --clock-alt-when:#CDEDE4;
+    --clock-alt-colon:#4E9E8B;
+
     --film-s: 68%;
     --film-l: 44%;
     --film-1: hsl(38 var(--film-s) var(--film-l));   --film-1-bg: hsl(38 var(--film-s) 94%);   /* The Debut */
@@ -186,30 +196,47 @@
   }
 
   /* ---------- Digital clock ---------- */
-  /* Sits in the header beside the festival dates, so it's sized by its own
-     contents rather than stretching the full column width. */
+  /* Two cards share this row as equal columns, so they match in width, and
+     align-items:stretch makes them match in height too. */
+  .clock-row{
+    display:grid; grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:13px; align-items:stretch;
+  }
   .clock-card{
     position:relative; overflow:hidden;
-    background:var(--ink); color:#fff;
+    background:var(--clock-bg); color:#fff;
     border-radius:var(--radius-lg);
     padding:15px 19px 17px;
-    width:fit-content; max-width:100%;
     display:flex; flex-direction:column; align-items:flex-start; gap:9px;
     box-shadow:var(--shadow);
   }
   .clock-card .clock-label{
-    font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#B9C2EE;
+    font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--clock-key);
   }
-  .clock-card .clock-when{ font-size:12px; color:#DADFF7; max-width:30ch; }
+  .clock-card .clock-when{
+    font-size:12px; color:var(--clock-when); max-width:30ch; margin-top:auto;
+  }
   .clock-card .clock-when b{ color:#fff; font-weight:700; white-space:nowrap; }
+
+  /* Complementary teal against the navy, same structure throughout. */
+  .clock-card.alt{ background:var(--clock-alt-bg); }
+  .clock-card.alt .clock-label{ color:var(--clock-alt-key); }
+  .clock-card.alt .clock-when{ color:var(--clock-alt-when); }
+  .clock-card.alt .clock-digits .unit{ color:var(--clock-alt-key); }
+  .clock-card.alt .clock-digits .colon{ color:var(--clock-alt-colon); }
+  .clock-card.alt .clock-open{ color:var(--clock-alt-key); }
   .clock-digits{ display:flex; align-items:baseline; gap:3px; font-variant-numeric:tabular-nums; }
   .clock-digits .seg{ display:flex; flex-direction:column; align-items:center; min-width:46px; }
   .clock-digits .val{
     font-size:26px; font-weight:800; line-height:1;
     background:rgba(255,255,255,0.08); border-radius:9px; padding:7px 3px; width:100%; text-align:center;
   }
-  .clock-digits .unit{ font-size:8.5px; color:#B9C2EE; text-transform:uppercase; letter-spacing:0.07em; margin-top:4px; }
-  .clock-digits .colon{ font-size:20px; font-weight:800; color:#7C8AC4; padding-bottom:12px; }
+  .clock-digits .unit{
+    font-size:8.5px; color:var(--clock-key); text-transform:uppercase;
+    letter-spacing:0.07em; margin-top:4px;
+  }
+  .clock-digits .colon{ font-size:20px; font-weight:800; color:var(--clock-colon); padding-bottom:12px; }
   .clock-open{ font-size:16px; font-weight:700; color:var(--teal); }
 
   /* ---------- Legend ---------- */
@@ -240,6 +267,8 @@
     font-size:13px; line-height:1.55; color:var(--ink-soft);
   }
   .cal-pending b{ display:block; color:var(--ink); font-size:15px; font-weight:700; margin-bottom:4px; }
+  .cal-note{ margin-top:10px; font-size:11.5px; color:var(--ink-faint); }
+  .cal-note b{ color:var(--ink-soft); font-weight:600; }
   .cal-dow{
     background:var(--surface-2); color:var(--ink-soft);
     font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
@@ -538,6 +567,27 @@
   }
   .lockin-empty{ font-size:13px; color:var(--ink-faint); padding:4px 2px; }
 
+  .invite-step{
+    margin-top:18px; background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:18px 20px; box-shadow:var(--shadow);
+  }
+  .invite-step h3{ font-size:14px; font-weight:700; margin-bottom:4px; }
+  .invite-sub{ font-size:12.5px; color:var(--ink-faint); margin-bottom:14px; line-height:1.55; }
+  .invite-actions{ display:flex; flex-wrap:wrap; align-items:center; gap:14px; }
+  .invite-alt{ font-size:12px; color:var(--accent); font-weight:600; }
+  .invite-gcal{ margin-top:14px; display:flex; flex-wrap:wrap; gap:7px; }
+  .invite-gcal .g-label{
+    width:100%; font-size:11px; font-weight:700; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--ink-faint);
+  }
+  .invite-gcal a{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; font-weight:600; color:var(--ink-soft);
+    background:var(--surface-2); border:1px solid var(--line);
+    border-radius:100px; padding:6px 12px; text-decoration:none;
+  }
+  .invite-gcal a:hover{ color:var(--ink); border-color:var(--line-strong); }
+
   /* ---------- Lock-in: side panel + persistent calendar ---------- */
   .page.wide{ max-width:1340px; }
 
@@ -613,6 +663,8 @@
     .cal-cell{ min-height:64px; padding:5px 3px 6px; }
     .evt{ font-size:9.5px; padding:2px 5px; }
     .head-row{ flex-direction:column; align-items:flex-start; }
+    /* Stacked, so equal columns no longer level them — 1fr rows do. */
+    .clock-row{ grid-template-columns:1fr; gap:12px; grid-auto-rows:1fr; }
     .section-head{ flex-wrap:wrap; gap:2px 10px; }
     header.top .fest-dates{ text-align:left; }
     .clock-digits .val{ font-size:23px; padding:6px 2px; }
@@ -661,6 +713,7 @@
   </div>
 
   <div class="head-row head-row-2">
+    <div class="clock-row">
     <div class="clock-card" id="clockCard">
       <div class="clock-label">Booking window opens in</div>
       <div class="clock-digits" id="clockDigits">
@@ -673,6 +726,21 @@
         <div class="seg"><span class="val" id="clkS">00</span><span class="unit">sec</span></div>
       </div>
       <div class="clock-when">BFI Member priority. Good thing you're sleeping with a member. <b>Thu 10 Sept 2026, 10:00 BST</b></div>
+    </div>
+
+    <div class="clock-card alt" id="pickCard">
+      <div class="clock-label">Oli has left to pick</div>
+      <div class="clock-digits">
+        <div class="seg"><span class="val" id="pickD">00</span><span class="unit">days</span></div>
+        <span class="colon">:</span>
+        <div class="seg"><span class="val" id="pickH">00</span><span class="unit">hrs</span></div>
+        <span class="colon">:</span>
+        <div class="seg"><span class="val" id="pickM">00</span><span class="unit">min</span></div>
+        <span class="colon">:</span>
+        <div class="seg"><span class="val" id="pickS">00</span><span class="unit">sec</span></div>
+      </div>
+      <div class="clock-when">Shortlist has to be in by <b>Wed 9 Sept 2026, 23:59 BST</b></div>
+    </div>
     </div>
 
     <div class="fest-dates">
@@ -691,6 +759,7 @@
     </div>
     <div class="cal-pending" id="calPending" hidden></div>
     <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-note" id="calNote" hidden></div>
   </section>
 
   <section class="poll">
@@ -794,6 +863,16 @@
       <thead><tr id="lockinHead"></tr></thead>
       <tbody id="lockinBody"></tbody>
     </table>
+  </div>
+
+  <div class="invite-step">
+    <h3>Send the invites</h3>
+    <p class="invite-sub" id="inviteSub"></p>
+    <div class="invite-actions">
+      <button type="button" class="lockin-btn" id="inviteBtn" disabled>Invite Em &rarr;</button>
+      <a class="invite-alt" id="inviteMail" href="#" hidden>or just email her the times</a>
+    </div>
+    <div class="invite-gcal" id="inviteGcal" hidden></div>
   </div>
 </div>
 </div>
@@ -1070,6 +1149,23 @@
     calPendingEl.hidden = !pending;
     calGrids[0].hidden = pending;
     document.getElementById("legend").hidden = pending;
+
+    // Galas outside Em's nine carry no screening times in this page's data, so
+    // they can't be plotted — say so by name rather than dropping them silently.
+    var haveTimes = {};
+    films.forEach(function(f){ haveTimes[f.slug] = true; });
+    var oliDoc = liveShortlists()["oli"];
+    var oliPicks = oliDoc ? oliDoc.picks : [];
+    var noTimes = pollFilms.filter(function(pf){
+      return oliPicks.indexOf(pf.id) !== -1 && !haveTimes[pf.id];
+    }).map(function(pf){ return pf.title; });
+
+    var noteEl = document.getElementById("calNote");
+    noteEl.hidden = noTimes.length === 0;
+    if(noTimes.length){
+      noteEl.innerHTML = "Also ticked, with no listed times to plot: <b>" +
+        noTimes.join("</b>, <b>") + "</b>.";
+    }
 
     if(pending){
       calPendingEl.innerHTML = "<b>Ruh roh.</b>" +
@@ -1883,22 +1979,167 @@
     loadNameIntoForm();
   })();
 
-  // ---- Digital clock: countdown to BFI Member priority booking (10 Sept 2026, 10:00 BST) ----
+  // ---- Calendar invites for the showings everyone locked in ----
+  var EM_EMAIL = "emilychebanu@gmail.com";
+
+  // Showings that every person who's locked in has ticked. These are the only
+  // ones worth inviting anyone to.
+  function sharedShowings(){
+    var slugs = Object.keys(lockedDocs);
+    if(slugs.length < 2) return [];
+    var out = [];
+    sharedFilms().forEach(function(f){
+      var lists = slugs.map(function(s){ return asList(lockedDocs[s].choices[f.id]); });
+      if(lists.some(function(l){ return l.length === 0; })) return;
+      lists.reduce(function(a, b){
+        return a.filter(function(i){ return b.indexOf(i) !== -1; });
+      }).sort(function(a, b){ return a - b; }).forEach(function(idx){
+        if(f.screenings[idx]) out.push({film:f, s:f.screenings[idx], idx:idx});
+      });
+    });
+    return out;
+  }
+
+  function runtimeMins(f){
+    var m = /(\d+)\s*min/.exec(f.meta || "");
+    return m ? parseInt(m[1], 10) : 130;
+  }
+  // Wall-clock arithmetic. Safe here: the festival sits entirely inside BST,
+  // with the switch to GMT a week after it ends.
+  function stampAfter(date, time, addMins){
+    var d = new Date(date + "T" + time + ":00Z");
+    d = new Date(d.getTime() + addMins * 60000);
+    return d.toISOString().slice(0, 19).replace(/[-:]/g, "");
+  }
+  function icsEscape(t){
+    return String(t).replace(/\\/g, "\\\\").replace(/;/g, "\\;")
+      .replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  }
+  // RFC 5545 caps content lines at 75 octets; continuations start with a space.
+  function icsFold(line){
+    if(line.length <= 74) return line;
+    var out = line.slice(0, 74), rest = line.slice(74);
+    while(rest.length){ out += "\r\n " + rest.slice(0, 73); rest = rest.slice(73); }
+    return out;
+  }
+  function buildIcs(list){
+    var now = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+    var lines = [
+      "BEGIN:VCALENDAR", "VERSION:2.0",
+      "PRODID:-//LFF 2026 Shortlist//EN", "CALSCALE:GREGORIAN"
+    ];
+    list.forEach(function(item){
+      var f = item.film, s = item.s;
+      lines.push(
+        "BEGIN:VEVENT",
+        "UID:lff26-" + f.id + "-" + item.idx + "@lff-shortlist",
+        "DTSTAMP:" + now,
+        "DTSTART;TZID=Europe/London:" + stampAfter(s.date, s.time, 0),
+        "DTEND;TZID=Europe/London:" + stampAfter(s.date, s.time, runtimeMins(f) + 15),
+        "SUMMARY:" + icsEscape("LFF: " + f.title),
+        "LOCATION:" + icsEscape(s.venue),
+        "DESCRIPTION:" + icsEscape("Dir. " + f.director + "\n" + f.url),
+        "ATTENDEE;CN=Em;RSVP=TRUE:mailto:" + EM_EMAIL,
+        "END:VEVENT"
+      );
+    });
+    lines.push("END:VCALENDAR");
+    return lines.map(icsFold).join("\r\n") + "\r\n";
+  }
+  function gcalLink(item){
+    var f = item.film, s = item.s;
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+      "&text=" + encodeURIComponent("LFF: " + f.title) +
+      // Floating times, no trailing Z: a Z would mean UTC and make Google
+      // ignore ctz, shifting every screening an hour late during BST.
+      "&dates=" + stampAfter(s.date, s.time, 0) + "/" +
+        stampAfter(s.date, s.time, runtimeMins(f) + 15) +
+      "&ctz=Europe/London" +
+      "&location=" + encodeURIComponent(s.venue) +
+      "&details=" + encodeURIComponent("Dir. " + f.director + "\n" + f.url) +
+      "&add=" + encodeURIComponent(EM_EMAIL);
+  }
+
   (function(){
-    var target = new Date("2026-09-10T10:00:00+01:00").getTime();
+    var btn = document.getElementById("inviteBtn");
+    var sub = document.getElementById("inviteSub");
+    var mail = document.getElementById("inviteMail");
+    var gcal = document.getElementById("inviteGcal");
+
+    function describe(item){
+      return item.film.title + " — " + item.s.day + ", " + item.s.time + " (" + item.s.venue + ")";
+    }
+
+    function render(){
+      var list = sharedShowings();
+      btn.disabled = list.length === 0;
+      mail.hidden = list.length === 0;
+      gcal.hidden = list.length === 0;
+
+      if(!list.length){
+        var people = Object.keys(lockedDocs).length;
+        sub.textContent = people < 2
+          ? "Once you've both locked showings in, the ones you agree on can be sent to Em as calendar invites."
+          : "No showing has been ticked by both of you yet, so there's nothing to invite anyone to.";
+        gcal.innerHTML = "";
+        return;
+      }
+
+      sub.innerHTML = "<b>" + list.length + " showing" + (list.length === 1 ? "" : "s") +
+        "</b> ticked by both of you. The download opens in your calendar app with Em " +
+        "(" + EM_EMAIL + ") already on the invite &mdash; send it from there.";
+
+      mail.href = "mailto:" + encodeURIComponent(EM_EMAIL) +
+        "?subject=" + encodeURIComponent("LFF 2026 — the screenings we both picked") +
+        "&body=" + encodeURIComponent(list.map(describe).join("\n"));
+
+      gcal.innerHTML = '<span class="g-label">Or add them one at a time, which sends the invite itself</span>' +
+        list.map(function(item){
+          return '<a href="' + gcalLink(item) + '" target="_blank" rel="noopener">' +
+            item.film.title + ' &middot; ' + item.s.day.replace(/^\w+ /, "") + ' ' + item.s.time + '</a>';
+        }).join("");
+    }
+
+    btn.addEventListener("click", function(){
+      var list = sharedShowings();
+      if(!list.length) return;
+      var blob = new Blob([buildIcs(list)], {type:"text/calendar;charset=utf-8"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "lff-2026-shared-screenings.ics";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+    });
+
+    watchLocked(render);
+    watchShortlists(render);
+  })();
+
+  // ---- Digital clocks ----
+  // BFI Member priority booking opens 10 Sept 2026, 10:00 BST. Oli therefore
+  // has to have picked by the end of the day before — change PICK_DEADLINE if
+  // you want to give him more or less rope.
+  var BOOKING_OPENS  = "2026-09-10T10:00:00+01:00";
+  var PICK_DEADLINE  = "2026-09-09T23:59:00+01:00";
+
+  function startCountdown(opts){
+    var target = new Date(opts.target).getTime();
     var els = {
-      d: document.getElementById("clkD"),
-      h: document.getElementById("clkH"),
-      m: document.getElementById("clkM"),
-      s: document.getElementById("clkS")
+      d: document.getElementById(opts.ids[0]),
+      h: document.getElementById(opts.ids[1]),
+      m: document.getElementById(opts.ids[2]),
+      s: document.getElementById(opts.ids[3])
     };
-    var card = document.getElementById("clockCard");
+    var card = document.getElementById(opts.card);
     function pad(n){ return String(n).padStart(2,"0"); }
     function tick(){
       var diff = target - Date.now();
       if(diff <= 0){
-        card.innerHTML = '<div class="clock-label">BFI Member priority booking</div>'+
-          '<div class="clock-open">Booking is open &mdash; go get your tickets</div>';
+        card.innerHTML = '<div class="clock-label">'+opts.doneLabel+'</div>'+
+          '<div class="clock-open">'+opts.doneText+'</div>';
         clearInterval(timer);
         return;
       }
@@ -1913,7 +2154,18 @@
     }
     tick();
     var timer = setInterval(tick, 1000);
-  })();
+  }
+
+  startCountdown({
+    target: BOOKING_OPENS, card:"clockCard", ids:["clkD","clkH","clkM","clkS"],
+    doneLabel:"BFI Member priority booking",
+    doneText:"Booking is open &mdash; go get your tickets"
+  });
+  startCountdown({
+    target: PICK_DEADLINE, card:"pickCard", ids:["pickD","pickH","pickM","pickS"],
+    doneLabel:"Shortlist deadline",
+    doneText:"Time's up &mdash; whatever's ticked is the shortlist"
+  });
 })();
 </script>
 
