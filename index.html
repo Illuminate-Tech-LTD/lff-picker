@@ -1072,9 +1072,8 @@
     document.getElementById("legend").hidden = pending;
 
     if(pending){
-      calPendingEl.innerHTML = "<b>Nothing to plot yet.</b>" +
-        "Oli hasn't picked any of Em's films. Tick some in <em>Create your shortlist</em> " +
-        "below and they'll land here as you go.";
+      calPendingEl.innerHTML = "<b>Ruh roh.</b>" +
+        "You haven't picked any of Em's films. Tick some in below and they'll land here as you go.";
       calHintEl.textContent = "waiting on Oli's picks";
     } else {
       calHintEl.innerHTML = list.length + " film" + (list.length === 1 ? "" : "s") +
