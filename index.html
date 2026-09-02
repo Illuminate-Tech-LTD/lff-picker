@@ -105,6 +105,9 @@
   }
 
   *{ box-sizing:border-box; }
+  /* Needed for the pending state: .cal-grid and .legend set display, which
+     would otherwise beat the hidden attribute. */
+  [hidden]{ display:none !important; }
   html,body{ margin:0; padding:0; }
   body{
     background:var(--paper);
@@ -231,6 +234,12 @@
     background:var(--line);
     gap:1px;
   }
+  .cal-pending{
+    background:var(--surface); border:1px dashed var(--line-strong);
+    border-radius:var(--radius-md); padding:22px 22px;
+    font-size:13px; line-height:1.55; color:var(--ink-soft);
+  }
+  .cal-pending b{ display:block; color:var(--ink); font-size:15px; font-weight:700; margin-bottom:4px; }
   .cal-dow{
     background:var(--surface-2); color:var(--ink-soft);
     font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
@@ -670,8 +679,9 @@
   <section class="calendar">
     <div class="section-head">
       <h2>Screenings</h2>
-      <span class="hint">times shown are local &middot; London venues</span>
+      <span class="hint" id="calHint">times shown are local &middot; London venues</span>
     </div>
+    <div class="cal-pending" id="calPending" hidden></div>
     <div class="cal-grid" id="calGrid"></div>
   </section>
 
@@ -961,7 +971,6 @@
       target.appendChild(el);
     });
   }
-  buildLegend(document.getElementById("legend"), films);
 
   // ---- Calendar ----
   var dows = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
@@ -1031,7 +1040,48 @@
 
   var lockinCalGrid = document.getElementById("calGridLockin");
   var calGrids = [document.getElementById("calGrid"), lockinCalGrid];
-  buildCalendar(calGrids[0], null);
+  var calPendingEl = document.getElementById("calPending");
+  var calHintEl = document.getElementById("calHint");
+  var pollNameEl = document.getElementById("pollName");
+  var pollChecksEl = document.getElementById("pollChecks");
+
+  // While someone is picking as Oli the calendar follows the boxes live;
+  // otherwise it follows whatever he last saved. Empty either way until he
+  // starts, which is the pending state.
+  function landingSlugs(){
+    if(slugName(pollNameEl.value || "") === "oli"){
+      return Array.prototype.map.call(
+        pollChecksEl.querySelectorAll('input[type="checkbox"]:checked'),
+        function(cb){ return cb.value; });
+    }
+    var doc = shortlistDocs && shortlistDocs["oli"];
+    return doc ? doc.picks : [];
+  }
+
+  function renderLandingCalendar(){
+    var slugs = landingSlugs();
+    var list = films.filter(function(f){ return slugs.indexOf(f.slug) !== -1; });
+    var allowed = {};
+    list.forEach(function(f){ allowed[f.id] = true; });
+
+    buildCalendar(calGrids[0], allowed);
+    buildLegend(document.getElementById("legend"), list);
+
+    var pending = list.length === 0;
+    calPendingEl.hidden = !pending;
+    calGrids[0].hidden = pending;
+    document.getElementById("legend").hidden = pending;
+
+    if(pending){
+      calPendingEl.innerHTML = "<b>Nothing to plot yet.</b>" +
+        "Oli hasn't picked any of Em's films. Tick some in <em>Create your shortlist</em> " +
+        "below and they'll land here as you go.";
+      calHintEl.textContent = "waiting on Oli's picks";
+    } else {
+      calHintEl.innerHTML = list.length + " film" + (list.length === 1 ? "" : "s") +
+        " Oli's picked &middot; times are local";
+    }
+  }
 
   // The lock-in view schedules only the films on both shortlists, so its
   // calendar and legend follow that set instead of the full programme.
@@ -1340,15 +1390,20 @@
 
     function checkboxes(){ return Array.from(pollChecksEl.querySelectorAll('input[type="checkbox"]')); }
 
+    // Ticking a gala redraws the landing calendar immediately, before any save.
+    pollChecksEl.addEventListener("change", renderLandingCalendar);
+
     function loadNameIntoChecks(){
       var slug = slugName(nameInput.value || "");
       var doc = allShortlists()[slug];
       var picks = doc ? doc.picks : [];
       checkboxes().forEach(function(cb){ cb.checked = picks.indexOf(cb.value) !== -1; });
+      renderLandingCalendar();   // programmatic ticks don't fire change
     }
     nameInput.addEventListener("change", loadNameIntoChecks);
     nameInput.addEventListener("input", function(){
       refreshSaveBtn();
+      renderLandingCalendar();
       var typed = (nameInput.value || "").trim();
       if(!typed || isPicker()){
         statusEl.textContent = ""; statusEl.className = "poll-status";
@@ -1454,6 +1509,7 @@
     });
 
     watchShortlists(renderCompare);
+    watchShortlists(renderLandingCalendar);
     loadNameIntoChecks();
     refreshSaveBtn();
   })();
