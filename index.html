@@ -939,9 +939,9 @@
   </div>
 </div>
 
- This classic script runs during parse so the app
-     script below always has a promise to await; the deferred module resolves it. -->
 <script>
+  // Runs during parse, so the app script further down always has a promise to
+  // await; the deferred module below is what resolves it.
   window.lffSync = {};
   window.lffSync.ready = new Promise(function(resolve){ window.lffSync._resolve = resolve; });
 </script>
