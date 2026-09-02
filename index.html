@@ -1048,19 +1048,8 @@
   // While someone is picking as Oli the calendar follows the boxes live;
   // otherwise it follows whatever he last saved. Empty either way until he
   // starts, which is the pending state.
-  function landingSlugs(){
-    if(slugName(pollNameEl.value || "") === "oli"){
-      return Array.prototype.map.call(
-        pollChecksEl.querySelectorAll('input[type="checkbox"]:checked'),
-        function(cb){ return cb.value; });
-    }
-    var doc = shortlistDocs && shortlistDocs["oli"];
-    return doc ? doc.picks : [];
-  }
-
   function renderLandingCalendar(){
-    var slugs = landingSlugs();
-    var list = films.filter(function(f){ return slugs.indexOf(f.slug) !== -1; });
+    var list = landingFilms();
     var allowed = {};
     list.forEach(function(f){ allowed[f.id] = true; });
 
@@ -1289,6 +1278,38 @@
     Object.keys(shortlistDocs).forEach(function(s){ out[s] = shortlistDocs[s]; });
     return out;
   }
+
+  function pollIsOli(){ return slugName(pollNameEl.value || "") === "oli"; }
+  function checkedPollSlugs(){
+    return Array.prototype.map.call(
+      pollChecksEl.querySelectorAll('input[type="checkbox"]:checked'),
+      function(cb){ return cb.value; });
+  }
+  // The landing page reflects Oli's ticking as it happens, so his entry is
+  // swapped for the live boxes while he's the one picking. sharedFilms() below
+  // deliberately does NOT use this — the lock-in step waits for a save.
+  function liveShortlists(){
+    var out = allShortlists();
+    if(pollIsOli()) out.oli = {name:"Oli", picks:checkedPollSlugs()};
+    return out;
+  }
+  // True when the boxes no longer match what Oli last saved, so the page can
+  // say the live numbers aren't committed yet.
+  function pollDirty(){
+    if(!pollIsOli()) return false;
+    var saved = shortlistDocs && shortlistDocs["oli"];
+    var savedPicks = saved ? saved.picks : [];
+    var live = checkedPollSlugs();
+    if(live.length !== savedPicks.length) return true;
+    return live.some(function(s){ return savedPicks.indexOf(s) === -1; });
+  }
+
+  // Em's films that Oli currently wants — the number the headline reports.
+  function landingFilms(){
+    var doc = liveShortlists()["oli"];
+    var picks = doc ? doc.picks : [];
+    return films.filter(function(f){ return picks.indexOf(f.slug) !== -1; });
+  }
   // Films with screenings that sit on Em's list and on every awaited one.
   function sharedFilms(){
     if(missingPeople().length) return [];
@@ -1390,20 +1411,22 @@
 
     function checkboxes(){ return Array.from(pollChecksEl.querySelectorAll('input[type="checkbox"]')); }
 
-    // Ticking a gala redraws the landing calendar immediately, before any save.
-    pollChecksEl.addEventListener("change", renderLandingCalendar);
+    // Ticking a gala redraws the calendar and the headline together, before
+    // any save, so the count and the grid never disagree.
+    function refreshLive(){ renderLandingCalendar(); renderCompare(); }
+    pollChecksEl.addEventListener("change", refreshLive);
 
     function loadNameIntoChecks(){
       var slug = slugName(nameInput.value || "");
       var doc = allShortlists()[slug];
       var picks = doc ? doc.picks : [];
       checkboxes().forEach(function(cb){ cb.checked = picks.indexOf(cb.value) !== -1; });
-      renderLandingCalendar();   // programmatic ticks don't fire change
+      refreshLive();   // programmatic ticks don't fire change
     }
     nameInput.addEventListener("change", loadNameIntoChecks);
     nameInput.addEventListener("input", function(){
       refreshSaveBtn();
-      renderLandingCalendar();
+      refreshLive();
       var typed = (nameInput.value || "").trim();
       if(!typed || isPicker()){
         statusEl.textContent = ""; statusEl.className = "poll-status";
@@ -1414,9 +1437,12 @@
     });
 
     function renderCompare(){
-      var waitingOn = missingPeople();
-      var shared = sharedFilms().length;
-      if(waitingOn.length){
+      var docs = liveShortlists();         // always at least Em
+      var shared = landingFilms().length;
+      var waitingOn = missingPeople();     // saved shortlists, not live ticks
+
+      // Only nag for a shortlist when there's genuinely nothing to judge yet.
+      if(shared === 0 && waitingOn.length){
         verdictLine.textContent = "Waiting on " + nameList(waitingOn) + ".";
         verdictNote.textContent = "Tick your galas and the overlap lands here.";
       } else {
@@ -1425,7 +1451,6 @@
         verdictNote.textContent = v.note;
       }
 
-      var docs = allShortlists();          // always at least Em
       var slugs = Object.keys(docs);
       compareTable.hidden = false;
       slugs.sort(function(a,b){ return docs[a].name.localeCompare(docs[b].name); });
@@ -1454,10 +1479,12 @@
       }
 
       var everyoneMatches = rows.filter(function(r){ return r.pickers.length === slugs.length; }).length;
-      compareFoot.textContent = waitingOn.length
+      compareFoot.textContent = (waitingOn.length && !shared)
         ? "Waiting on " + nameList(waitingOn) + "'s shortlist to compare against Em's."
-        : rows.length + " film" + (rows.length===1?"":"s") + " flagged between us, "
-          + everyoneMatches + " of them by both.";
+        : pollDirty()
+          ? "Not saved yet — hit Save so this sticks for both of you."
+          : rows.length + " film" + (rows.length===1?"":"s") + " flagged between us, "
+            + everyoneMatches + " of them by both.";
     }
 
     async function initDb(){
