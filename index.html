@@ -765,7 +765,6 @@
   <section class="poll">
     <div class="section-head">
       <h2>Create your shortlist</h2>
-      <span class="hint">pick a name, tick your galas, see the overlap live</span>
     </div>
     <div class="shortlist-layout">
     <div class="shortlist-main">
@@ -1170,7 +1169,6 @@
     if(pending){
       calPendingEl.innerHTML = "<b>Ruh roh.</b>" +
         "You haven't picked films yet. Tick some below and they'll land here as you go.";
-      calHintEl.textContent = "waiting on Oli's picks";
     } else {
       calHintEl.innerHTML = list.length + " film" + (list.length === 1 ? "" : "s") +
         " Oli's picked &middot; times are local";
