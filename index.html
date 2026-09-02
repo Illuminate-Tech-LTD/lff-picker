@@ -1498,7 +1498,7 @@
 
   // Headline judgement on the overlap. n is out of films.length.
   function verdictFor(n, total){
-    if(n === 0) return {line:"We have nothing in common.", note:"Not one film. "};
+    if(n === 0) return {line:"We have nothing in common.", note:"Not one film. Boo."};
     if(n === total) return {line:"We have <b>every</b> film in common.", note:"I did build this so you can see my picks."};
     var note = n === 1 ? "One. Time to put in a shift at the culture factory."
       : n <= 3 ? "Selective. I like it."
