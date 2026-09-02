@@ -1278,6 +1278,16 @@
     shortlistWatchers.forEach(function(fn){ fn(); });
   }
 
+  // Same shape for the locked-in showings. Page 1's reset has to clear these
+  // too, so they can't stay private to the lock-in block.
+  var lockedDocs = {};      // slug -> {name, choices:{filmId:[screeningIndex]}}
+  var lockedWatchers = [];
+  function watchLocked(fn){ lockedWatchers.push(fn); fn(); }
+  function publishLocked(next){
+    lockedDocs = next;
+    lockedWatchers.forEach(function(fn){ fn(); });
+  }
+
   function missingPeople(){
     return PEOPLE.filter(function(p){ return !shortlistDocs[p.slug]; });
   }
@@ -1422,21 +1432,66 @@
     function checkboxes(){ return Array.from(pollChecksEl.querySelectorAll('input[type="checkbox"]')); }
 
     var resetBtn = document.getElementById("pollReset");
+
+    // Anything committed that this button would clear.
+    function savedToClear(){
+      if(!pollIsOli()) return false;
+      var mine = shortlistDocs["oli"];
+      if(mine && mine.picks.length) return true;
+      return Object.keys(lockedDocs).some(function(s){
+        return Object.keys(lockedDocs[s].choices || {}).length > 0;
+      });
+    }
     function refreshResetBtn(){
-      resetBtn.disabled = !checkboxes().some(function(cb){ return cb.checked; });
+      var ticked = checkboxes().some(function(cb){ return cb.checked; });
+      resetBtn.disabled = !ticked && !savedToClear();
     }
 
     // Ticking a gala redraws the calendar and the headline together, before
     // any save, so the count and the grid never disagree.
     function refreshLive(){ renderLandingCalendar(); renderCompare(); refreshResetBtn(); }
 
-    // Local only: the saved shortlist is untouched until Save, so a reload
-    // brings it back. Saving an empty list is what actually clears it.
-    resetBtn.addEventListener("click", function(){
+    // Clears the boxes, and — when Oli is the one resetting — the saved
+    // shortlist and every locked-in showing with it, since an empty shortlist
+    // leaves nothing on page 2 to schedule. Deletes are forbidden by the
+    // security rules, so this writes empty values instead.
+    resetBtn.addEventListener("click", async function(){
+      var wipeSaved = savedToClear();
+      if(wipeSaved && !window.confirm(
+          "Reset clears Oli's saved shortlist and every locked-in screening, " +
+          "for both of you. This can't be undone. Continue?")){
+        return;
+      }
+
       checkboxes().forEach(function(cb){ cb.checked = false; });
       statusEl.textContent = ""; statusEl.className = "poll-status";
       refreshLive();
+      if(!wipeSaved) return;
+
+      if(!db){ statusEl.textContent = "Cleared here, but live sync is offline."; return; }
+      resetBtn.disabled = true;
+      statusEl.textContent = "Clearing…"; statusEl.className = "poll-status";
+      var stamp = new Date().toISOString();
+      try{
+        var writes = [db.collection("shortlists").doc("oli")
+          .set({name:"Oli", picks:[], updatedAt:stamp})];
+        Object.keys(lockedDocs).forEach(function(slug){
+          writes.push(db.collection("lockedScreenings").doc(slug)
+            .set({name:lockedDocs[slug].name, choices:{}, updatedAt:stamp}));
+        });
+        await Promise.all(writes);
+        statusEl.textContent = "Shortlist and locked-in screenings cleared.";
+        statusEl.className = "poll-status ok";
+      }catch(e){
+        statusEl.textContent = "Couldn't clear (" + (e && e.code || "error") + ") — try again.";
+        statusEl.className = "poll-status";
+      }
+      refreshResetBtn();
     });
+
+    // Saved state changing is what enables or disables this button.
+    watchShortlists(refreshResetBtn);
+    watchLocked(refreshResetBtn);
     pollChecksEl.addEventListener("change", refreshLive);
 
     function loadNameIntoChecks(){
@@ -1610,7 +1665,6 @@
     var progressEl = document.getElementById("lockinProgress");
     var gateEl = document.getElementById("lockinGate");
 
-    var latestDocs = {}; // slug -> {name, choices: {filmId: screeningIndex}}
     var db = null;
     var hydrated = false;
 
@@ -1706,7 +1760,7 @@
 
     function loadNameIntoForm(){
       var slug = slugName(nameInput.value || "");
-      var doc = latestDocs[slug];
+      var doc = lockedDocs[slug];
       var choices = doc ? doc.choices : {};
       films.forEach(function(f){
         var want = asList(choices[f.id]);
@@ -1720,16 +1774,16 @@
     nameInput.addEventListener("change", loadNameIntoForm);
 
     function renderSummary(){
-      var slugs = Object.keys(latestDocs);
+      var slugs = Object.keys(lockedDocs);
       if(!slugs.length){
         emptyEl.hidden = false; tableEl.hidden = true;
         return;
       }
       emptyEl.hidden = true; tableEl.hidden = false;
-      slugs.sort(function(a,b){ return latestDocs[a].name.localeCompare(latestDocs[b].name); });
+      slugs.sort(function(a,b){ return lockedDocs[a].name.localeCompare(lockedDocs[b].name); });
 
       headEl.innerHTML = '<th>Film</th>' + slugs.map(function(s){
-        return '<th class="person">'+latestDocs[s].name+'</th>';
+        return '<th class="person">'+lockedDocs[s].name+'</th>';
       }).join("");
 
       var sharedIds = {};
@@ -1737,7 +1791,7 @@
 
       var rows = films.filter(function(f){ return sharedIds[f.id]; }).map(function(f){
         var perPerson = slugs.map(function(s){
-          var l = asList(latestDocs[s].choices[f.id]);
+          var l = asList(lockedDocs[s].choices[f.id]);
           return l.length ? l : null;
         });
         var chosen = perPerson.filter(function(v){ return v !== null; });
@@ -1792,8 +1846,7 @@
           var data = d.data();
           if(data && data.name) next[d.id] = {name:data.name, choices:data.choices || {}};
         });
-        latestDocs = next;
-        renderSummary();
+        publishLocked(next);
         if(!hydrated){ hydrated = true; loadNameIntoForm(); }
       }, function(err){
         statusEl.textContent = "Couldn't load the shared plan (" + err.code + ").";
@@ -1827,6 +1880,7 @@
       renderCards();
       renderSummary();
     });
+    watchLocked(renderSummary);
     loadNameIntoForm();
   })();
 
