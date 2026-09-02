@@ -1066,9 +1066,11 @@
 
   function slugName(n){ return n.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"") || "guest"; }
 
-  // The two people this page is for. Shortlist docs are keyed by slugName(),
-  // so these are the doc ids expected in the `shortlists` collection.
-  var PEOPLE = [{slug:"em", name:"Em"}, {slug:"oli", name:"Oli"}];
+  // Em's shortlist is this page: the films carrying screenings ARE her picks,
+  // so she never has to save one. Only Oli's has to arrive over the wire, and
+  // PEOPLE lists just the shortlists we wait on (doc ids from slugName()).
+  var EM = {slug:"em", name:"Em", picks:films.map(function(f){ return f.slug; })};
+  var PEOPLE = [{slug:"oli", name:"Oli"}];
 
   // One copy of the shortlist data — the poll renders it, and the lock-in
   // step needs it to work out which films are in play.
@@ -1083,13 +1085,21 @@
   function missingPeople(){
     return PEOPLE.filter(function(p){ return !shortlistDocs[p.slug]; });
   }
-  // Films that have screenings AND sit on everyone's shortlist.
+  // Every shortlist the page knows, Em's implicit one included. A saved `em`
+  // doc wins, so she can still narrow her list if she wants to.
+  function allShortlists(){
+    var out = {em:{name:EM.name, picks:EM.picks}};
+    Object.keys(shortlistDocs).forEach(function(s){ out[s] = shortlistDocs[s]; });
+    return out;
+  }
+  // Films with screenings that sit on Em's list and on every awaited one.
   function sharedFilms(){
     if(missingPeople().length) return [];
+    var lists = allShortlists();
     return films.filter(function(f){
       return PEOPLE.every(function(p){
-        return shortlistDocs[p.slug].picks.indexOf(f.slug) !== -1;
-      });
+        return lists[p.slug].picks.indexOf(f.slug) !== -1;
+      }) && lists.em.picks.indexOf(f.slug) !== -1;
     });
   }
   function nameList(people){
@@ -1156,27 +1166,24 @@
 
     function loadNameIntoChecks(){
       var slug = slugName(nameInput.value || "");
-      var doc = shortlistDocs[slug];
+      var doc = allShortlists()[slug];
       var picks = doc ? doc.picks : [];
       checkboxes().forEach(function(cb){ cb.checked = picks.indexOf(cb.value) !== -1; });
     }
     nameInput.addEventListener("change", loadNameIntoChecks);
 
     function renderCompare(){
-      var slugs = Object.keys(shortlistDocs);
-      if(!slugs.length){
-        compareTable.hidden = true; compareFoot.textContent = "Nobody's saved a shortlist yet — be the first.";
-        return;
-      }
+      var docs = allShortlists();          // always at least Em
+      var slugs = Object.keys(docs);
       compareTable.hidden = false;
-      slugs.sort(function(a,b){ return shortlistDocs[a].name.localeCompare(shortlistDocs[b].name); });
+      slugs.sort(function(a,b){ return docs[a].name.localeCompare(docs[b].name); });
 
       compareHead.innerHTML = '<th>Film</th>' + slugs.map(function(s){
-        return '<th class="person">'+shortlistDocs[s].name+'</th>';
+        return '<th class="person">'+docs[s].name+'</th>';
       }).join("");
 
       var rows = pollFilms.map(function(f){
-        var pickers = slugs.filter(function(s){ return shortlistDocs[s].picks.indexOf(f.id) !== -1; });
+        var pickers = slugs.filter(function(s){ return docs[s].picks.indexOf(f.id) !== -1; });
         return {film:f, pickers:pickers};
       }).filter(function(r){ return r.pickers.length > 0; })
         .sort(function(a,b){ return b.pickers.length - a.pickers.length; });
@@ -1195,9 +1202,10 @@
       }
 
       var everyoneMatches = rows.filter(function(r){ return r.pickers.length === slugs.length; }).length;
-      compareFoot.textContent = slugs.length > 1
-        ? (everyoneMatches + " film" + (everyoneMatches===1?"":"s") + " everyone's picked, out of " + rows.length + " flagged so far.")
-        : "Waiting on a second shortlist to compare against.";
+      var waiting = missingPeople();
+      compareFoot.textContent = waiting.length
+        ? "Waiting on " + nameList(waiting) + "'s shortlist to compare against Em's."
+        : (everyoneMatches + " film" + (everyoneMatches===1?"":"s") + " everyone's picked, out of " + rows.length + " flagged so far.");
     }
 
     async function initDb(){
@@ -1260,13 +1268,12 @@
     lockinOpenBtn.disabled = !shared.length;
     if(missing.length){
       lockinCtaHint.textContent = "Waiting on " + nameList(missing) +
-        (missing.length > 1 ? " to save their shortlists" : "'s shortlist") +
-        " — locking in opens once you've both saved.";
+        "'s shortlist — locking in opens once they've ticked their galas.";
     } else if(!shared.length){
-      lockinCtaHint.textContent = "Nothing on both your shortlists yet, so there's nothing to schedule.";
+      lockinCtaHint.textContent = "None of those picks overlap this shortlist, so there's nothing to schedule.";
     } else {
       lockinCtaHint.textContent = shared.length + (shared.length === 1 ? " film is" : " films are") +
-        " on both your shortlists — pick a showing for each.";
+        " on both lists — pick a showing for each.";
     }
   });
 
@@ -1313,10 +1320,10 @@
         var missing = missingPeople();
         gateEl.hidden = false;
         gateEl.innerHTML = missing.length
-          ? "Waiting on <b>" + nameList(missing) + "</b> to save a shortlist. " +
-            "The films you've both picked will show up here to schedule."
-          : "Nothing on both your shortlists yet — tick the same film on each side " +
-            "of the compare table and it'll appear here.";
+          ? "Waiting on <b>" + nameList(missing) + "</b> to tick their galas. " +
+            "Whatever overlaps Em's shortlist shows up here to schedule."
+          : "None of those picks overlap Em's shortlist yet, so there's nothing " +
+            "to schedule.";
         progressEl.textContent = "";
         highlightCalendar({});
         return;
