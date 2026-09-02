@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LFF 2026 Shortlist</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -193,6 +198,7 @@
     color:var(--ink-soft);
   }
   .legend-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .legend-compact{ display:none; }
 
   /* ---------- Calendar ---------- */
   section.calendar{ margin-bottom:48px; }
@@ -201,7 +207,7 @@
   .section-head .hint{ font-size:12.5px; color:var(--ink-faint); }
 
   .cal-grid{
-    display:grid; grid-template-columns:repeat(7,1fr);
+    display:grid; grid-template-columns:repeat(7,minmax(0,1fr));
     border:1px solid var(--line); border-radius:var(--radius-md); overflow:hidden;
     background:var(--line);
     gap:1px;
@@ -213,6 +219,7 @@
   }
   .cal-cell{
     background:var(--surface);
+    min-width:0;
     min-height:96px;
     padding:7px 6px 8px;
     display:flex; flex-direction:column; gap:4px;
@@ -231,8 +238,17 @@
     background:var(--film-bg, var(--surface-2));
     color:var(--film-color, var(--ink));
   }
+  .evt{ min-width:0; }
   .evt .t{ font-weight:700; opacity:0.75; flex:none; }
-  .evt .n{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .evt .n{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* A screening someone has locked in: bold, ringed. */
+  .evt.picked{
+    font-weight:800;
+    box-shadow:inset 0 0 0 1.5px var(--film-color, var(--ink));
+  }
+  .evt.picked .t, .evt.picked .n{ font-weight:800; opacity:1; }
+  /* The other showings of a film that's already been locked in. */
+  .evt.superseded{ opacity:0.32; }
 
   /* ---------- Agenda / film cards ---------- */
   section.agenda h2{ font-size:20px; font-weight:800; margin-bottom:4px; }
@@ -419,13 +435,79 @@
   }
   .lockin-empty{ font-size:13px; color:var(--ink-faint); padding:4px 2px; }
 
+  /* ---------- Lock-in: side panel + persistent calendar ---------- */
+  .page.wide{ max-width:1340px; }
+
+  .lockin-layout{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 370px;
+    gap:26px;
+    margin-bottom:30px;
+  }
+  /* The column stretches to the row height so the inner box can stick. */
+  .lockin-cal-sticky{ position:sticky; top:16px; }
+  .lockin-cal-sticky .section-head{ margin-bottom:12px; }
+  .lockin-cal-sticky .section-head h2{ font-size:18px; font-weight:700; }
+  .lockin-progress{ margin-top:14px; font-size:12px; color:var(--ink-faint); }
+  .lockin-progress b{ color:var(--ink); font-weight:700; }
+
+  .lockin-panel{
+    background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius-md); padding:0 14px 14px;
+  }
+  .lockin-panel-head{
+    position:sticky; top:0; z-index:5;
+    background:var(--surface-2); padding:14px 0 12px;
+    border-bottom:1px solid var(--line); margin-bottom:14px;
+  }
+  .lockin-panel .lockin-who{ margin-bottom:0; }
+  .lockin-panel .lockin-who input{ background:var(--surface); }
+  .lockin-panel .poll-status{ display:block; margin-top:7px; }
+  .lockin-panel .lockin-list{ margin-bottom:0; }
+
+  @media (max-width:1000px){
+    /* Stacked. Sticky has to move up to the column itself: as a grid item its
+       travel would be capped at one row's height, so drop out of grid here and
+       let it stick across the whole block instead. */
+    .lockin-layout{ display:block; }
+    .lockin-cal-col{
+      position:sticky; top:0; z-index:8;
+      background:var(--paper); padding:10px 0 12px; margin-bottom:18px;
+      max-height:58vh; overflow:auto;
+      box-shadow:0 12px 18px -16px rgba(26,26,62,0.55);
+    }
+    .lockin-cal-sticky{ position:static; }
+    .lockin-panel-head{ position:static; }
+    #viewLockin .cal-cell{ min-height:64px; }
+    #viewLockin .evt{ font-size:9.5px; padding:2px 6px; }
+  }
+
+  @media (max-width:720px){
+    /* Seven columns on a phone leaves no room for titles — show the time only
+       and let the legend below map colours back to films. */
+    #viewLockin .evt{ justify-content:center; padding:2px 3px; }
+    #viewLockin .evt .n{ display:none; }
+    #viewLockin .evt .t{ opacity:1; }
+    /* One scrolling row, so the pinned calendar doesn't need inner scrolling. */
+    #viewLockin .legend-compact{
+      display:flex; flex-wrap:nowrap; overflow-x:auto;
+      gap:5px; margin:10px 0 2px; padding-bottom:3px;
+    }
+    #viewLockin .legend-compact .legend-item{
+      flex:none; font-size:10px; padding:3px 8px 3px 6px; gap:5px;
+    }
+    #viewLockin .legend-compact .legend-dot{ width:7px; height:7px; }
+    /* Keep the heading and its hint from colliding at phone widths. */
+    #viewLockin .section-head{ flex-wrap:wrap; gap:2px 10px; }
+  }
+
   footer{
     margin-top:44px; padding-top:16px; border-top:1px solid var(--line);
     font-size:11.5px; color:var(--ink-faint);
   }
 
   @media (max-width:640px){
-    .cal-grid{ grid-template-columns:repeat(7,1fr); }
+    .cal-grid{ grid-template-columns:repeat(7,minmax(0,1fr)); }
     .cal-cell{ min-height:80px; padding:5px 3px 6px; }
     .evt{ font-size:9.5px; padding:2px 5px; }
     header.top{ flex-direction:column; align-items:flex-start; }
@@ -434,8 +516,10 @@
     .clock-digits .seg{ min-width:44px; }
   }
 </style>
+</head>
+<body>
 
-<div class="page">
+<div class="page" id="pageWrap">
 
 <div id="viewMain">
 
@@ -530,17 +614,34 @@
   <div class="lockin-header">
     <button id="lockinBack" class="ghost-btn">&larr; Back</button>
     <h2>Lock in screenings</h2>
-    <p>Pick the one showing you'll actually go to for each film &mdash; saves live so you both see the same plan.</p>
+    <p>Pick the one showing you'll actually go to for each film &mdash; your picks turn bold in the calendar, and it saves live so you both see the same plan.</p>
   </div>
 
-  <div class="lockin-who">
-    <label class="eyebrow" for="lockinName">Who's locking in?</label>
-    <input id="lockinName" type="text" placeholder="Your name" list="pollNames" autocomplete="off" />
-    <button id="lockinSave" class="poll-save">Save</button>
-    <span class="poll-status" id="lockinStatus"></span>
-  </div>
+  <div class="lockin-layout">
+    <div class="lockin-cal-col">
+      <div class="lockin-cal-sticky">
+        <div class="section-head">
+          <h2>Screenings</h2>
+          <span class="hint">your picks show in bold</span>
+        </div>
+        <div class="cal-grid" id="calGridLockin"></div>
+        <div class="legend legend-compact" id="legendLockin"></div>
+        <div class="lockin-progress" id="lockinProgress"></div>
+      </div>
+    </div>
 
-  <div class="lockin-list" id="lockinList"></div>
+    <aside class="lockin-panel">
+      <div class="lockin-panel-head">
+        <div class="lockin-who">
+          <label class="eyebrow" for="lockinName">Who's locking in?</label>
+          <input id="lockinName" type="text" placeholder="Your name" list="pollNames" autocomplete="off" />
+          <button id="lockinSave" class="poll-save">Save</button>
+        </div>
+        <span class="poll-status" id="lockinStatus"></span>
+      </div>
+      <div class="lockin-list" id="lockinList"></div>
+    </aside>
+  </div>
 
   <div class="lockin-summary">
     <h3>Locked-in plan</h3>
@@ -553,6 +654,56 @@
 </div>
 </div>
 
+
+<!-- Live sync handshake. This classic script runs during parse so the app
+     script below always has a promise to await; the deferred module resolves it. -->
+<script>
+  window.lffSync = {};
+  window.lffSync.ready = new Promise(function(resolve){ window.lffSync._resolve = resolve; });
+</script>
+
+<script type="module">
+  // Firebase web config for project "lff-shortlist". These are public client
+  // identifiers, not secrets — access is controlled by firestore.rules.
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3ohZBBmYqPDdhwMjVLTV6E0aIDg2q0jk",
+    authDomain: "lff-shortlist.firebaseapp.com",
+    projectId: "lff-shortlist",
+    storageBucket: "lff-shortlist.firebasestorage.app",
+    messagingSenderId: "819254902140",
+    appId: "1:819254902140:web:863383398303a5608a38f9"
+  };
+  const SDK = "https://www.gstatic.com/firebasejs/11.10.0";
+
+  try {
+    const { initializeApp } = await import(`${SDK}/firebase-app.js`);
+    const { getFirestore, collection, doc, setDoc, onSnapshot } =
+      await import(`${SDK}/firebase-firestore.js`);
+
+    const fs = getFirestore(initializeApp(firebaseConfig));
+
+    // Thin adapter so the app code can stay written against the small
+    // collection/doc/onSnapshot surface it already used.
+    window.lffSync._resolve({
+      collection(name){
+        const colRef = collection(fs, name);
+        return {
+          onSnapshot(next, error){
+            return onSnapshot(colRef, snap => next({
+              docs: snap.docs.map(d => ({ id: d.id, data: () => d.data() }))
+            }), error);
+          },
+          doc(id){
+            return { set: data => setDoc(doc(colRef, id), data) };
+          }
+        };
+      }
+    });
+  } catch (err) {
+    console.error("[lff] Firebase init failed:", err);
+    window.lffSync._resolve(null);
+  }
+</script>
 
 <script>
 (function(){
@@ -677,30 +828,28 @@
   }
 
   // ---- Legend ----
-  var legend = document.getElementById("legend");
+  var legends = [document.getElementById("legend"), document.getElementById("legendLockin")];
   films.forEach(function(f){
-    var el = document.createElement("div");
-    el.className = "legend-item";
-    el.innerHTML = '<span class="legend-dot" style="background:'+filmColor(f.id)+'"></span>' + f.title;
-    legend.appendChild(el);
+    legends.forEach(function(target){
+      var el = document.createElement("div");
+      el.className = "legend-item";
+      el.innerHTML = '<span class="legend-dot" style="background:'+filmColor(f.id)+'"></span>' + f.title;
+      target.appendChild(el);
+    });
   });
 
   // ---- Calendar ----
-  var calGrid = document.getElementById("calGrid");
   var dows = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-  dows.forEach(function(d){
-    var el = document.createElement("div");
-    el.className = "cal-dow";
-    el.textContent = d;
-    calGrid.appendChild(el);
-  });
 
-  // Build date -> events map
+  // Build date -> events map. filmId + idx let us point back at a specific screening.
   var byDate = {};
   films.forEach(function(f){
-    f.screenings.forEach(function(s){
+    f.screenings.forEach(function(s, i){
       byDate[s.date] = byDate[s.date] || [];
-      byDate[s.date].push({time:s.time, title:f.title, color:filmColor(f.id), bg:filmBg(f.id)});
+      byDate[s.date].push({
+        time:s.time, title:f.title, color:filmColor(f.id), bg:filmBg(f.id),
+        filmId:f.id, idx:i
+      });
     });
   });
   Object.keys(byDate).forEach(function(k){
@@ -716,29 +865,60 @@
     {date:"2026-10-15",num:15},{date:"2026-10-16",num:16},{date:"2026-10-17",num:17},{date:"2026-10-18",num:18}
   ];
 
-  cells.forEach(function(c){
-    var cell = document.createElement("div");
-    if(!c.date){
-      cell.className = "cal-cell empty";
-      calGrid.appendChild(cell);
-      return;
-    }
-    var events = byDate[c.date] || [];
-    cell.className = "cal-cell" + (events.length ? " has-events" : "");
-    var dn = document.createElement("div");
-    dn.className = "daynum";
-    dn.textContent = c.num;
-    cell.appendChild(dn);
-    events.forEach(function(e){
-      var tag = document.createElement("div");
-      tag.className = "evt";
-      tag.style.setProperty("--film-color", e.color);
-      tag.style.setProperty("--film-bg", e.bg);
-      tag.innerHTML = '<span class="t">'+e.time+'</span><span class="n">'+shortTitle(e.title)+'</span>';
-      cell.appendChild(tag);
+  function buildCalendar(calGrid){
+    dows.forEach(function(d){
+      var el = document.createElement("div");
+      el.className = "cal-dow";
+      el.textContent = d;
+      calGrid.appendChild(el);
     });
-    calGrid.appendChild(cell);
-  });
+    cells.forEach(function(c){
+      var cell = document.createElement("div");
+      if(!c.date){
+        cell.className = "cal-cell empty";
+        calGrid.appendChild(cell);
+        return;
+      }
+      var events = byDate[c.date] || [];
+      cell.className = "cal-cell" + (events.length ? " has-events" : "");
+      var dn = document.createElement("div");
+      dn.className = "daynum";
+      dn.textContent = c.num;
+      cell.appendChild(dn);
+      events.forEach(function(e){
+        var tag = document.createElement("div");
+        tag.className = "evt";
+        tag.style.setProperty("--film-color", e.color);
+        tag.style.setProperty("--film-bg", e.bg);
+        tag.setAttribute("data-film", e.filmId);
+        tag.setAttribute("data-idx", e.idx);
+        tag.setAttribute("title", e.time + " · " + e.title);
+        tag.innerHTML = '<span class="t">'+e.time+'</span><span class="n">'+shortTitle(e.title)+'</span>';
+        cell.appendChild(tag);
+      });
+      calGrid.appendChild(cell);
+    });
+  }
+
+  var calGrids = [
+    document.getElementById("calGrid"),
+    document.getElementById("calGridLockin")
+  ];
+  calGrids.forEach(buildCalendar);
+
+  // Bold the screenings in `choices` ({filmId: screeningIndex}) and fade the
+  // other showings of any film that's already been picked.
+  function highlightCalendar(choices){
+    calGrids.forEach(function(grid){
+      Array.prototype.forEach.call(grid.querySelectorAll(".evt"), function(el){
+        var pick = choices[el.getAttribute("data-film")];
+        var hasPick = (pick !== undefined && pick !== null);
+        var isPick = hasPick && pick === parseInt(el.getAttribute("data-idx"), 10);
+        el.classList.toggle("picked", isPick);
+        el.classList.toggle("superseded", hasPick && !isPick);
+      });
+    });
+  }
 
   // ---- Agenda ----
   var list = document.getElementById("filmList");
@@ -843,6 +1023,24 @@
 
   function slugName(n){ return n.trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"") || "guest"; }
 
+  // Firestore when the page is served over http(s); Claude's own db as a
+  // fallback when it's open as an artifact (where Firestore's network is blocked).
+  var syncBackend = null;
+  function getBackend(){
+    if(syncBackend) return syncBackend;
+    syncBackend = (async function(){
+      try{
+        var fb = await window.lffSync.ready;
+        if(fb) return fb;
+      }catch(e){}
+      try{
+        if(window.claude && window.claude.use) return await window.claude.use("db");
+      }catch(e){}
+      return null;
+    })();
+    return syncBackend;
+  }
+
   var pollChecksEl = document.getElementById("pollChecks");
   pollFilms.forEach(function(f){
     var item = document.createElement("div");
@@ -894,7 +1092,7 @@
     function renderCompare(){
       var slugs = Object.keys(latestDocs);
       if(!slugs.length){
-        compareTable.hidden = true; compareFoot.textContent = "Nobody's saved a shortlist yet &mdash; be the first.";
+        compareTable.hidden = true; compareFoot.textContent = "Nobody's saved a shortlist yet — be the first.";
         return;
       }
       compareTable.hidden = false;
@@ -930,11 +1128,9 @@
     }
 
     async function initDb(){
-      try{
-        db = (window.claude && window.claude.use) ? await window.claude.use("db") : null;
-      }catch(e){ db = null; }
+      db = await getBackend();
       if(!db){
-        dbNoteEl.textContent = "Live syncing needs this page open in Claude — open it there so Oli's picks sync here.";
+        dbNoteEl.textContent = "Live syncing is offline right now — your picks won't reach Oli.";
         saveBtn.disabled = true;
         return;
       }
@@ -978,12 +1174,15 @@
   // ---- View switching: main <-> lock-in screenings ----
   var viewMain = document.getElementById("viewMain");
   var viewLockin = document.getElementById("viewLockin");
+  var pageWrap = document.getElementById("pageWrap");
   document.getElementById("lockinOpen").addEventListener("click", function(){
     viewMain.hidden = true; viewLockin.hidden = false;
+    pageWrap.classList.add("wide");   // room for the calendar + picker side by side
     window.scrollTo(0,0);
   });
   document.getElementById("lockinBack").addEventListener("click", function(){
     viewLockin.hidden = true; viewMain.hidden = false;
+    pageWrap.classList.remove("wide");
     window.scrollTo(0,0);
   });
 
@@ -997,6 +1196,7 @@
     var tableEl = document.getElementById("lockinTable");
     var headEl = document.getElementById("lockinHead");
     var bodyEl = document.getElementById("lockinBody");
+    var progressEl = document.getElementById("lockinProgress");
 
     var latestDocs = {}; // slug -> {name, choices: {filmId: screeningIndex}}
     var db = null;
@@ -1034,6 +1234,17 @@
       return choices;
     }
 
+    // Keep the calendar and the progress line in step with the radios.
+    function syncFromForm(){
+      var choices = readChoices();
+      highlightCalendar(choices);
+      var n = Object.keys(choices).length;
+      progressEl.innerHTML = n
+        ? '<b>' + n + '</b> of ' + films.length + ' films locked in &mdash; shown in bold above.'
+        : 'Pick a showing on the right and it turns bold in the calendar.';
+    }
+    listEl.addEventListener("change", syncFromForm);
+
     function loadNameIntoForm(){
       var slug = slugName(nameInput.value || "");
       var doc = latestDocs[slug];
@@ -1045,6 +1256,7 @@
         var radio = listEl.querySelector('input[name="'+name+'"][value="'+want+'"]');
         if(radio) radio.checked = true;
       });
+      syncFromForm();
     }
     nameInput.addEventListener("change", loadNameIntoForm);
 
@@ -1087,11 +1299,9 @@
     }
 
     async function initDb(){
-      try{
-        db = (window.claude && window.claude.use) ? await window.claude.use("db") : null;
-      }catch(e){ db = null; }
+      db = await getBackend();
       if(!db){
-        statusEl.textContent = "Live syncing needs this page open in Claude.";
+        statusEl.textContent = "Live syncing is offline right now.";
         saveBtn.disabled = true;
         return;
       }
@@ -1166,3 +1376,6 @@
   })();
 })();
 </script>
+
+</body>
+</html>
