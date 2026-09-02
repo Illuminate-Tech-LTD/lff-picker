@@ -392,6 +392,14 @@
   }
   .poll-save:hover{ filter:brightness(1.08); }
   .poll-save:disabled{ opacity:0.5; cursor:not-allowed; }
+  .reset-btn{
+    font-family:"Plus Jakarta Sans", sans-serif; font-size:12px; font-weight:700;
+    background:none; border:1px solid var(--line-strong); color:var(--ink-soft);
+    border-radius:var(--radius-sm); padding:7px 13px; cursor:pointer;
+  }
+  .reset-btn:hover:not(:disabled){ background:var(--surface-2); color:var(--ink); }
+  .reset-btn:disabled{ opacity:0.35; cursor:not-allowed; }
+
   .poll-status{ font-size:12px; color:var(--ink-faint); }
   .poll-status.ok{ color:var(--teal); }
   .poll-checks{
@@ -626,7 +634,7 @@
 
     /* Form controls sat at 33px. */
     .poll-who input, .lockin-who input,
-    .poll-save, .lockin-btn, .ghost-btn, .agenda-all{ min-height:44px; }
+    .poll-save, .lockin-btn, .ghost-btn, .agenda-all, .reset-btn{ min-height:44px; }
   }
 </style>
 </head>
@@ -699,6 +707,7 @@
         <datalist id="pollPickers"><option value="Some other guy"></option><option value="Oli"></option></datalist>
         <datalist id="pollNames"><option value="Em"></option><option value="Oli"></option></datalist>
         <button id="pollSave" class="poll-save">Save</button>
+        <button type="button" id="pollReset" class="reset-btn">Reset</button>
         <span class="poll-status" id="pollStatus"></span>
       </div>
       <div class="poll-checks" id="pollChecks"></div>
@@ -769,6 +778,7 @@
           <label class="eyebrow" for="lockinName">Who's locking in?</label>
           <input id="lockinName" type="text" placeholder="Your name" list="pollNames" autocomplete="off" />
           <button id="lockinSave" class="poll-save">Save</button>
+          <button type="button" id="lockinReset" class="reset-btn">Reset</button>
         </div>
         <span class="poll-status" id="lockinStatus"></span>
       </div>
@@ -1411,9 +1421,22 @@
 
     function checkboxes(){ return Array.from(pollChecksEl.querySelectorAll('input[type="checkbox"]')); }
 
+    var resetBtn = document.getElementById("pollReset");
+    function refreshResetBtn(){
+      resetBtn.disabled = !checkboxes().some(function(cb){ return cb.checked; });
+    }
+
     // Ticking a gala redraws the calendar and the headline together, before
     // any save, so the count and the grid never disagree.
-    function refreshLive(){ renderLandingCalendar(); renderCompare(); }
+    function refreshLive(){ renderLandingCalendar(); renderCompare(); refreshResetBtn(); }
+
+    // Local only: the saved shortlist is untouched until Save, so a reload
+    // brings it back. Saving an empty list is what actually clears it.
+    resetBtn.addEventListener("click", function(){
+      checkboxes().forEach(function(cb){ cb.checked = false; });
+      statusEl.textContent = ""; statusEl.className = "poll-status";
+      refreshLive();
+    });
     pollChecksEl.addEventListener("change", refreshLive);
 
     function loadNameIntoChecks(){
@@ -1612,6 +1635,7 @@
             "to schedule.";
         progressEl.textContent = "";
         highlightCalendar({});
+        refreshResetBtn();
         return;
       }
       gateEl.hidden = true;
@@ -1655,9 +1679,22 @@
     }
 
     // Keep the calendar and the progress line in step with the radios.
+    var resetBtn = document.getElementById("lockinReset");
+    function refreshResetBtn(){
+      resetBtn.disabled = !listEl.querySelector('input[type="checkbox"]:checked');
+    }
+    resetBtn.addEventListener("click", function(){
+      Array.prototype.forEach.call(
+        listEl.querySelectorAll('input[type="checkbox"]'),
+        function(b){ b.checked = false; });
+      statusEl.textContent = ""; statusEl.className = "poll-status";
+      syncFromForm();
+    });
+
     function syncFromForm(){
       var choices = readChoices();
       highlightCalendar(choices);
+      refreshResetBtn();
       var total = listEl.querySelectorAll(".lockin-card").length;
       var n = Object.keys(choices).length;
       progressEl.innerHTML = n
