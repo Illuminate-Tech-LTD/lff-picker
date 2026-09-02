@@ -593,6 +593,16 @@
     .film-toggle{ font-size:13px; padding:16px; margin:-13px -9px -13px 0; }
     .poll-detail summary{ padding:7px 0; }
     .film-meta{ white-space:normal; }
+
+    /* Ticking a gala is the main thing you do on this page, and the row was
+       only 22px tall. Give it a proper 44px target and a bigger box. */
+    .poll-item{ padding:0; }
+    .poll-check{ min-height:44px; padding:5px 0; }
+    .poll-check input{ width:19px; height:19px; }
+
+    /* Form controls sat at 33px. */
+    .poll-who input, .lockin-who input,
+    .poll-save, .lockin-btn, .ghost-btn, .agenda-all{ min-height:44px; }
   }
 </style>
 </head>
