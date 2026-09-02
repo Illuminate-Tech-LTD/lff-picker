@@ -339,7 +339,6 @@
     background:none; border:1px solid var(--line-strong); color:var(--ink-soft);
     border-radius:100px; padding:4px 10px; cursor:pointer; flex:none; white-space:nowrap;
   }
-  .agenda-all:hover{ background:var(--surface); color:var(--ink); }
 
   /* The list is the only thing that scrolls, so the head stays put. */
   .film-list{
@@ -363,17 +362,18 @@
     background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md);
     padding:13px 15px; box-shadow:var(--shadow);
   }
+  /* Title and chevron share the top line, chevron pinned to the right; the
+     meta line sits under the title rather than beside it. */
   .film-head{
-    display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:4px 10px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
   }
+  .film-head .name-row{ min-width:0; }
   .film-card h3{ font-size:15px; }
-  .film-head .film-head-right{ display:flex; align-items:center; gap:8px; flex:none; }
   .film-toggle{
     background:none; border:none; cursor:pointer; color:var(--ink-faint);
     font-size:11px; line-height:1; padding:3px 4px; border-radius:5px; flex:none;
     transition:transform 0.15s ease;
   }
-  .film-toggle:hover{ background:var(--surface-2); color:var(--ink); }
   .film-toggle[aria-expanded="false"]{ transform:rotate(-90deg); }
   .film-body{ margin-top:8px; }
   .film-card.collapsed .film-body{ display:none; }
@@ -381,8 +381,9 @@
   .film-dot{ width:9px; height:9px; border-radius:50%; background:var(--film-color); flex:none; }
   .film-card h3{ font-size:17px; font-weight:700; }
   .film-card h3 a{ color:inherit; text-decoration:none; }
-  .film-card h3 a:hover{ color:var(--film-color); }
-  .film-meta{ font-size:11.5px; color:var(--ink-faint); white-space:nowrap; }
+  /* 18px = the 9px colour dot plus the 9px name-row gap, so the meta starts
+     under the title text rather than under the dot. */
+  .film-meta{ font-size:11.5px; color:var(--ink-faint); margin:3px 0 0 18px; }
 
   .film-credits{ font-size:12.5px; color:var(--ink-soft); margin-bottom:10px; }
   .film-credits b{ color:var(--ink); font-weight:600; }
@@ -432,14 +433,12 @@
     background:var(--accent); color:var(--accent-ink); border:none; border-radius:var(--radius-sm);
     padding:8px 16px; cursor:pointer;
   }
-  .poll-save:hover{ filter:brightness(1.08); }
   .poll-save:disabled{ opacity:0.5; cursor:not-allowed; }
   .reset-btn{
     font-family:"Plus Jakarta Sans", sans-serif; font-size:12px; font-weight:700;
     background:none; border:1px solid var(--line-strong); color:var(--ink-soft);
     border-radius:var(--radius-sm); padding:7px 13px; cursor:pointer;
   }
-  .reset-btn:hover:not(:disabled){ background:var(--surface-2); color:var(--ink); }
   .reset-btn:disabled{ opacity:0.35; cursor:not-allowed; }
 
   .poll-status{ font-size:12px; color:var(--ink-faint); }
@@ -512,7 +511,6 @@
     border-radius:var(--radius-sm); padding:7px 14px; font-weight:700; font-size:13px;
     cursor:pointer; font-family:"Plus Jakarta Sans",sans-serif;
   }
-  .ghost-btn:hover{ background:var(--surface-2); }
 
   .lockin-cta{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; flex-wrap:wrap; }
   .lockin-cta .hint{ font-size:12px; color:var(--ink-faint); }
@@ -521,7 +519,6 @@
     background:var(--ink); color:#fff; border:none; border-radius:var(--radius-sm);
     padding:9px 18px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
   }
-  .lockin-btn:hover{ filter:brightness(1.15); }
   .lockin-btn:disabled{ opacity:0.4; cursor:not-allowed; filter:none; }
 
   .lockin-gate{
@@ -557,7 +554,6 @@
     display:flex; align-items:center; gap:9px; font-size:13px; font-weight:600;
     padding:7px 9px; border-radius:8px; cursor:pointer;
   }
-  .lockin-option:hover{ background:var(--surface-2); }
   .lockin-option input{ accent-color:var(--accent); width:15px; height:15px; flex:none; }
   .lockin-option .v{ color:var(--ink-soft); font-weight:400; font-size:12px; }
 
@@ -599,14 +595,12 @@
     background:var(--surface-2); border:1px solid var(--line);
     border-radius:100px; padding:6px 12px; text-decoration:none;
   }
-  .invite-gcal a:hover{ color:var(--ink); border-color:var(--line-strong); }
 
   .nudge-btn{
     font-family:"Plus Jakarta Sans", sans-serif; font-size:13px; font-weight:700;
     background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent);
     border-radius:var(--radius-sm); padding:9px 16px; cursor:pointer;
   }
-  .nudge-btn:hover:not(:disabled){ background:var(--accent); color:var(--accent-ink); }
   .nudge-btn:disabled{ opacity:0.35; cursor:not-allowed; }
 
   .nudge-backdrop{
@@ -637,7 +631,6 @@
     font-size:22px; line-height:1; color:var(--ink-faint);
     padding:6px 9px; border-radius:6px;
   }
-  .nudge-close:hover{ background:var(--surface-2); color:var(--ink); }
 
   /* ---------- Lock-in: side panel + persistent calendar ---------- */
   .page.wide{ max-width:1340px; }
@@ -727,7 +720,6 @@
   @media (max-width:1000px){
     .film-toggle{ font-size:13px; padding:16px; margin:-13px -9px -13px 0; }
     .poll-detail summary{ padding:7px 0; }
-    .film-meta{ white-space:normal; }
 
     /* Ticking a gala is the main thing you do on this page, and the row was
        only 22px tall. Give it a proper 44px target and a bigger box. */
@@ -739,6 +731,26 @@
     .poll-who input, .lockin-who input, .poll-who select, .lockin-who select,
     .poll-save, .lockin-btn, .ghost-btn, .agenda-all, .reset-btn, .nudge-btn{ min-height:44px; }
   }
+  /* A tap leaves :hover applied on touch screens, so controls sat there
+     looking pressed after you'd finished with them. Gate every hover
+     affordance behind a real pointer, and drop the grey tap flash. */
+  button, summary, .poll-check, .lockin-option, .invite-gcal a, .film-card h3 a{
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (hover: hover){
+    .agenda-all:hover{ background:var(--surface); color:var(--ink); }
+    .film-toggle:hover{ background:var(--surface-2); color:var(--ink); }
+    .film-card h3 a:hover{ color:var(--film-color); }
+    .poll-save:hover{ filter:brightness(1.08); }
+    .reset-btn:hover:not(:disabled){ background:var(--surface-2); color:var(--ink); }
+    .ghost-btn:hover{ background:var(--surface-2); }
+    .lockin-btn:hover{ filter:brightness(1.15); }
+    .lockin-option:hover{ background:var(--surface-2); }
+    .invite-gcal a:hover{ color:var(--ink); border-color:var(--line-strong); }
+    .nudge-btn:hover:not(:disabled){ background:var(--accent); color:var(--accent-ink); }
+    .nudge-close:hover{ background:var(--surface-2); color:var(--ink); }
+  }
+
 </style>
 </head>
 <body>
@@ -1263,12 +1275,10 @@
           '<span class="film-dot"></span>'+
           '<h3><a href="'+f.url+'" target="_blank" rel="noopener">'+f.title+'</a>'+(f.badge ? '<span class="badge gala">'+f.badge+'</span>' : '')+'</h3>'+
         '</div>'+
-        '<div class="film-head-right">'+
-          '<div class="film-meta">'+f.meta+'</div>'+
-          '<button type="button" class="film-toggle" aria-expanded="true" '+
-            'aria-label="Collapse '+f.title+'">&#9662;</button>'+
-        '</div>'+
+        '<button type="button" class="film-toggle" aria-expanded="true" '+
+          'aria-label="Collapse '+f.title+'">&#9662;</button>'+
       '</div>'+
+      '<div class="film-meta">'+f.meta+'</div>'+
       '<div class="film-body">'+
         '<div class="film-credits"><b>Dir.</b> '+f.director+' &nbsp;&middot;&nbsp; <b>With</b> '+f.cast+'</div>'+
         '<div class="film-synopsis">'+f.synopsis+'</div>'+
