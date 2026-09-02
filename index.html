@@ -1169,7 +1169,7 @@
 
     if(pending){
       calPendingEl.innerHTML = "<b>Ruh roh.</b>" +
-        "You haven't picked any of Em's films. Tick some in below and they'll land here as you go.";
+        "You haven't picked films yet. Tick some below and they'll land here as you go.";
       calHintEl.textContent = "waiting on Oli's picks";
     } else {
       calHintEl.innerHTML = list.length + " film" + (list.length === 1 ? "" : "s") +
@@ -1604,7 +1604,7 @@
       if(!typed || isPicker()){
         statusEl.textContent = ""; statusEl.className = "poll-status";
       } else {
-        statusEl.textContent = "Only Oli's shortlist is needed here — Em's is already the list on the right.";
+        statusEl.textContent = "There's no other guy.";
         statusEl.className = "poll-status";
       }
     });
