@@ -306,9 +306,20 @@
   .evt.superseded{ opacity:0.32; }
 
   /* ---------- Shortlist builder: picks left, agenda panel right ---------- */
+  /* Named areas: the agenda spans both rows on desktop (which keeps its grid
+     area tall enough for the sticky panel inside), and mobile just reorders
+     the areas so Em's picks lands between the picks card and the verdict. */
   .shortlist-layout{
-    display:grid; grid-template-columns:minmax(0,1fr) 350px; gap:24px;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 350px;
+    grid-template-areas:
+      "poll    agenda"
+      "compare agenda";
+    gap:24px;
   }
+  .shortlist-layout > .poll-card{ grid-area:poll; margin-bottom:0; }
+  .shortlist-layout > .compare-wrap{ grid-area:compare; }
+  .shortlist-layout > .agenda-col{ grid-area:agenda; }
   /* .agenda-col stretches to the row height so the panel inside can stick. */
   .agenda-panel{
     position:sticky; top:16px;
@@ -337,7 +348,11 @@
   }
 
   @media (max-width:1000px){
-    .shortlist-layout{ grid-template-columns:1fr; gap:18px; }
+    .shortlist-layout{
+      grid-template-columns:1fr;
+      grid-template-areas: "poll" "agenda" "compare";
+      gap:18px;
+    }
     /* Stacked in the page flow: no inner scroll, and cards start collapsed
        (set in JS) so the panel doesn't add thousands of pixels of scroll. */
     .agenda-panel{ position:static; max-height:none; padding-bottom:15px; }
@@ -406,12 +421,12 @@
   }
   .poll-who{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:16px; }
   .poll-who label{ font-size:11.5px; }
-  .poll-who input{
+  .poll-who input, .poll-who select{
     font-family:"Plus Jakarta Sans", sans-serif; font-size:13.5px; font-weight:500;
     background:var(--surface-2); border:1px solid var(--line-strong); border-radius:var(--radius-sm);
     padding:7px 11px; color:var(--ink); min-width:160px;
   }
-  .poll-who input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .poll-who input:focus, .poll-who select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
   .poll-save{
     font-family:"Plus Jakarta Sans", sans-serif; font-size:13px; font-weight:700;
     background:var(--accent); color:var(--accent-ink); border:none; border-radius:var(--radius-sm);
@@ -523,12 +538,12 @@
 
   .lockin-who{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:20px; }
   .lockin-who label{ font-size:11.5px; }
-  .lockin-who input{
+  .lockin-who input, .lockin-who select{
     font-family:"Plus Jakarta Sans", sans-serif; font-size:13.5px; font-weight:500;
     background:var(--surface-2); border:1px solid var(--line-strong); border-radius:var(--radius-sm);
     padding:7px 11px; color:var(--ink); min-width:160px;
   }
-  .lockin-who input:focus{ outline:2px solid var(--accent); outline-offset:1px; }
+  .lockin-who input:focus, .lockin-who select:focus{ outline:2px solid var(--accent); outline-offset:1px; }
 
   .lockin-list{ display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
   .lockin-card{
@@ -650,7 +665,7 @@
     border-bottom:1px solid var(--line); margin-bottom:14px;
   }
   .lockin-panel .lockin-who{ margin-bottom:0; }
-  .lockin-panel .lockin-who input{ background:var(--surface); }
+  .lockin-panel .lockin-who input, .lockin-panel .lockin-who select{ background:var(--surface); }
   .lockin-panel .poll-status{ display:block; margin-top:7px; }
   .lockin-panel .lockin-list{ margin-bottom:0; }
 
@@ -721,7 +736,7 @@
     .poll-check input{ width:19px; height:19px; }
 
     /* Form controls sat at 33px. */
-    .poll-who input, .lockin-who input,
+    .poll-who input, .lockin-who input, .poll-who select, .lockin-who select,
     .poll-save, .lockin-btn, .ghost-btn, .agenda-all, .reset-btn, .nudge-btn{ min-height:44px; }
   }
 </style>
@@ -802,19 +817,33 @@
       <h2>Create your shortlist</h2>
     </div>
     <div class="shortlist-layout">
-    <div class="shortlist-main">
     <div class="poll-card">
       <div class="poll-who">
         <label class="eyebrow" for="pollName">Who's picking?</label>
-        <input id="pollName" type="text" placeholder="Your name" list="pollPickers" autocomplete="off" />
-        <datalist id="pollPickers"><option value="Some other guy"></option><option value="Oli"></option></datalist>
-        <datalist id="pollNames"><option value="Em"></option><option value="Oli"></option></datalist>
+        <select id="pollName">
+          <option value="">Pick a name…</option>
+          <option value="Some other guy">Some other guy</option>
+          <option value="Oli">Oli</option>
+        </select>
         <button id="pollSave" class="poll-save">Save</button>
         <button type="button" id="pollReset" class="reset-btn">Reset</button>
         <span class="poll-status" id="pollStatus"></span>
       </div>
       <div class="poll-checks" id="pollChecks"></div>
       <div class="poll-note" id="pollDbNote"></div>
+    </div>
+
+    <div class="agenda-col">
+      <aside class="agenda-panel">
+        <div class="agenda-panel-head">
+          <div>
+            <h2>Em's picks</h2>
+            <p class="agenda-sub">Tap a title to open its BFI booking page.</p>
+          </div>
+          <button type="button" class="agenda-all" id="agendaAll">Collapse all</button>
+        </div>
+        <div class="film-list" id="filmList"></div>
+      </aside>
     </div>
 
     <div class="compare-wrap">
@@ -831,20 +860,6 @@
         <span class="hint" id="lockinCtaHint">Ready to commit? Pick one showing per film together.</span>
         <button id="lockinOpen" class="lockin-btn" disabled>Lock in screenings &rarr;</button>
       </div>
-    </div>
-    </div>
-
-    <div class="agenda-col">
-      <aside class="agenda-panel">
-        <div class="agenda-panel-head">
-          <div>
-            <h2>Em's picks</h2>
-            <p class="agenda-sub">Tap a title to open its BFI booking page.</p>
-          </div>
-          <button type="button" class="agenda-all" id="agendaAll">Collapse all</button>
-        </div>
-        <div class="film-list" id="filmList"></div>
-      </aside>
     </div>
     </div>
   </section>
@@ -879,7 +894,11 @@
       <div class="lockin-panel-head">
         <div class="lockin-who">
           <label class="eyebrow" for="lockinName">Who's locking in?</label>
-          <input id="lockinName" type="text" placeholder="Your name" list="pollNames" autocomplete="off" />
+          <select id="lockinName">
+            <option value="">Pick a name…</option>
+            <option value="Em">Em</option>
+            <option value="Oli">Oli</option>
+          </select>
           <button id="lockinSave" class="poll-save">Save</button>
           <button type="button" id="lockinReset" class="reset-btn">Reset</button>
         </div>
@@ -1621,8 +1640,7 @@
       checkboxes().forEach(function(cb){ cb.checked = picks.indexOf(cb.value) !== -1; });
       refreshLive();   // programmatic ticks don't fire change
     }
-    nameInput.addEventListener("change", loadNameIntoChecks);
-    nameInput.addEventListener("input", function(){
+    function onNameChange(){
       refreshSaveBtn();
       refreshLive();
       var typed = (nameInput.value || "").trim();
@@ -1632,7 +1650,14 @@
         statusEl.textContent = "There's no other guy.";
         statusEl.className = "poll-status";
       }
+    }
+    // A <select> fires change; bind input too so this keeps working if the
+    // control ever goes back to a text field.
+    nameInput.addEventListener("change", function(){
+      loadNameIntoChecks();
+      onNameChange();
     });
+    nameInput.addEventListener("input", onNameChange);
 
     function renderCompare(){
       var docs = liveShortlists();         // always at least Em
